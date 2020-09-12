@@ -1,0 +1,8 @@
+[package]
+name = "jp2"
+version = "0.1.0"
+authors = ["Iszak Bryan <38895+iszak@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"

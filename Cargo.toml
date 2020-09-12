@@ -1,0 +1,7 @@
+[workspace]
+members = [
+  "jp2",
+  "jpeg2000"
+]
+
+default-members = ["jpeg2000"]

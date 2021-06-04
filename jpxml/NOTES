@@ -1,0 +1,4 @@
+hexBinary vs hexByte
+is length including box type/length? is it byte length
+is offset relative to parent or absolute
+is offset at the start of the data?

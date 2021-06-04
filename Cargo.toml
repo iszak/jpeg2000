@@ -2,7 +2,8 @@
 members = [
   "jp2",
   "jpc",
+  "jpxml",
   "jpeg2000"
-  ]
+]
 
 default-members = ["jpeg2000"]

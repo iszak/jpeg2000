@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<xs:schema
+    xmlns:xs="http://www.iso.org/jpeg/2001/XMLSchema" targetNamespace="http://www.iso.org/jpxml"
+    xmlns="http://www.iso.org/jpxml">
+    <xs:attributeGroup name="attrs.marker">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="offset" type="xs:integer" use="optional" />
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="marker" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="attrs.hex">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="type" use="required" >
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="hexbyte" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="attrs.int">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="integer" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="attrs.str">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="string" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="attrs.url">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="location" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="attrs.root">
+        <xs:attribute name="length" type="xs:integer" use="required" />
+        <xs:attribute name="name" type="xs:anyURL" use="optional" />
+    </xs:attributeGroup>
+</xs:schema>

@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "jp2",
+  "jpxml",
   "jpeg2000"
 ]
 

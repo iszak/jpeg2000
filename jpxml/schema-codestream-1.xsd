@@ -1,0 +1,480 @@
+<?xml version="1.0" ?>
+<xs:schema
+    xmlns:xs="http://www.iso.org/jpeg/2001/XMLSchema" targetNamespace="http://www.iso.org/jpxml"
+    xmlns="http://www.iso.org/jpxml">
+  <!-- part 1 marker element -->
+  <xs:element name="SOT">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Isot" />
+        <xs:element ref="Psot" />
+        <xs:element ref="TPsot" />
+        <xs:element ref="TNsot" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="SIZ">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Rsiz" />
+        <xs:element ref="Xsiz" />
+        <xs:element ref="Ysiz" />
+        <xs:element ref="OXsiz" />
+        <xs:element ref="OYsiz" />
+        <xs:element ref="XTsiz" />
+        <xs:element ref="YTsiz" />
+        <xs:element ref="XTOsiz" />
+        <xs:element ref="YTOsiz" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Csiz" />
+          <xs:element ref="XRsiz" />
+          <xs:element ref="YRsiz" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="COD">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Scod" />
+        <xs:element ref="SGcod" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="SPcod" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="COC">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Ccoc" />
+        <xs:element ref="Scoc" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="SPcoc" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="SGcod">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.hex" use="required" />
+      <xs:sequence>
+        <xs:element ref="progression" />
+        <xs:element ref="num_layers" />
+        <xs:element ref="colour_conv" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="SPcod">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.hex" use="required" />
+      <xs:sequence>
+        <xs:element ref="num_levels" />
+        <xs:element ref="xcb" />
+        <xs:element ref="ycb" />
+        <xs:element ref="style" />
+        <xs:element ref="wavelet" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="ppy" />
+          <xs:element ref="ppx" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="SPcoc">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.hex" use="required" />
+      <xs:sequence>
+        <xs:element ref="num_levels" />
+        <xs:element ref="xcb" />
+        <xs:element ref="ycb" />
+        <xs:element ref="style" />
+        <xs:element ref="wavelet" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="ppy" />
+          <xs:element ref="ppx" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="RGN">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Crgn" />
+        <xs:element ref="Srgn" />
+        <xs:element ref="SPrgn" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="QCD">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Sqcd" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="SPqcd" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="QCC">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Cqcc" />
+        <xs:element ref="Sqcc" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="SPqcc" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="POC">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence maxOccurs="unbounded">
+        <xs:element ref="RSpoc" />
+        <xs:element ref="CSpoc" />
+        <xs:element ref="LYEoc" />
+        <xs:element ref="REpoc" />
+        <xs:element ref="CEpoc" />
+        <xs:element ref="Ppoc" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="TLM">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Ztlm" />
+        <xs:element ref="Stlm" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Ttlm" />
+          <xs:element ref="Ptlm" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PLM">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence maxOccurs="unbounded">
+        <xs:element ref="Zplm" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Nplm" />
+          <xs:element ref="Iplm" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PLT">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Zplm" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Iplm" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PPM">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Zppm" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Nppm" />
+          <xs:sequence maxOccurs="unbounded">
+            <xs:element ref="Ippm" />
+          </xs:sequence>
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="PPT">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Zppt" />
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="Ippt" />
+        </xs:sequence>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="SOP">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Nsop" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="CRG">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence maxOccurs="unbounded">
+        <xs:element ref="Xcrg" />
+        <xs:element ref="Ycrg" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="COM">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.marker" use="required" />
+      <xs:sequence>
+        <xs:element ref="Rcom" />
+        <xs:element ref="Ccom" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- part 1 marker element -->
+  <xs:element name="Isot" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Psot" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="TPsot" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="TNsot" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Rsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Xsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ysiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="OXsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="OYsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="XTsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="YTsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="XTOsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="YTOsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Csiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="XRsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="YRsiz" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Scod" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SGcod" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SPcod" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Ccoc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Scoc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SPcoc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Crgn" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Srgn" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SPrgn" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Sqcd" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SPqcd" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Cqcc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="Sqcc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+  <xs:element name="SPqcc" type="xs:hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
+  </xs:element>
+
+  <xs:element name="progression" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="num_layers" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="colour_conv" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="num_levels" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="xcb" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="ycb" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="style" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="wavelet" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="ppy" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="ppx" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Crgn" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Srgn" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="SPrgn" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Sqcd" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="SPqcd" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Cqcc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Sqcc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="SPqcc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="RSpoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="CSpoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="LYEoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="REpoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="CEpoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ppoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="CEpoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ppoc" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ztlm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Stlm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ttlm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ptlm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Zplm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Nplm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Iplm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Zplm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Zppm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Nppm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ippm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Zppm" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ippt" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Nsop" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Xcrg" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ycrg" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Rcom" type="xs:integer">
+    <xs:attributeGroup ref="attrs.int" use="required" />
+  </xs:element>
+  <xs:element name="Ccom" type="xs:integer">
+    <xs:attributeGroup ref="attrs.str" use="required" />
+  </xs:element>
+</xs:schema>

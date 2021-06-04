@@ -1,0 +1,462 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.jpeg.org/jpxml/1.0" targetNamespace="http://www.jpeg.org/jpxml/1.0">
+  <xs:include schemaLocation="common.xsd"/>
+  <!-- jpxml part 1 root element -->
+  <xs:element name="jpxml">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="jP__"/>
+        <xs:element ref="ftyp"/>
+        <xs:element ref="jp2h"/>
+        <!-- <xs:element ref="jp2i" minOccurs="0" /> -->
+        <xs:element ref="_xml_" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="uuid" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="uinf" minOccurs="0"/>
+        <xs:element ref="jp2c"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.root"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="jP__">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="signature"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ftyp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="brand"/>
+        <xs:element ref="version"/>
+        <xs:element ref="compatibility" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="jp2h">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ihdr"/>
+        <xs:element ref="bpcc" minOccurs="0"/>
+        <xs:element ref="colr"/>
+        <xs:element ref="pclr" minOccurs="0"/>
+        <!-- <xs:element ref="cmap" minOccurs="0" />-->
+        <xs:element ref="cdef" minOccurs="0"/>
+        <xs:element ref="res_" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ihdr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="height"/>
+        <xs:element ref="width"/>
+        <xs:element ref="num_components"/>
+        <xs:element ref="depth"/>
+        <xs:element ref="compression"/>
+        <xs:element ref="colour_unknown"/>
+        <xs:element ref="ipr"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="bpcc">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="depth" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="colr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="method"/>
+        <xs:element ref="precedence"/>
+        <xs:element ref="approx"/>
+        <xs:element ref="colour"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="pclr">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="num_entries"/>
+        <xs:element ref="num_components"/>
+        <xs:element ref="depth" maxOccurs="unbounded"/>
+        <xs:element ref="data" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="cdef">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="num_entries"/>
+        <xs:sequence maxOccurs="unbounded">
+          <xs:element ref="index"/>
+          <xs:element ref="type"/>
+          <xs:element ref="assoc"/>
+        </xs:sequence>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="res_">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="resc" maxOccurs="unbounded"/>
+        <xs:element ref="resd" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="resc">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="vert_num"/>
+        <xs:element ref="vert_den"/>
+        <xs:element ref="hori_num"/>
+        <xs:element ref="hori_den"/>
+        <xs:element ref="vert_exp"/>
+        <xs:element ref="hori_exp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="resd">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="vert_num"/>
+        <xs:element ref="vert_den"/>
+        <xs:element ref="hori_num"/>
+        <xs:element ref="hori_den"/>
+        <xs:element ref="vert_exp"/>
+        <xs:element ref="hori_exp"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- UUID box -->
+  <xs:element name="uuid">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="id"/>
+        <xs:element ref="data"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="uinf">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ulst"/>
+        <xs:element ref="url_"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ulst">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="num_entries"/>
+        <xs:element ref="uuid"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="url_">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="location"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- XML box -->
+  <xs:element name="_xml_">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="text"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- codestream -->
+  <xs:element name="jp2c">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="data"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="attrs.box"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- part 1 content element -->
+  <!-- jp__ -->
+  <xs:element name="signature">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="hexbyte">
+          <xs:attributeGroup ref="attrs.hex"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <!-- ftyp -->
+  <xs:element name="brand">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="fourcc">
+          <xs:attributeGroup ref="attrs.4cc"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="version">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="compatibility">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="fourcc">
+          <xs:attributeGroup ref="attrs.4cc"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <!-- jp2h -->
+  <!-- ihdr -->
+  <xs:element name="width">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="height">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="depth">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="num_components">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="compression">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="colour_unknown">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ipr">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <!-- colr -->
+  <xs:element name="method">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="precedence">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="approx">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <!-- changed to int -->
+  <xs:element name="colour">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="num_entries">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="data">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="hexbyte">
+          <xs:attributeGroup ref="attrs.hex"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="index">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="type">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="assoc">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="hexbyte">
+          <xs:attributeGroup ref="attrs.hex"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="vert_num">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="vert_den">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="hori_num">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="hori_den">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="vert_exp">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="hori_exp">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="id">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attributeGroup ref="attrs.int"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="location">
+    <xs:complexType>
+      <xs:attributeGroup ref="attrs.url"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="text">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attributeGroup ref="attrs.str"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

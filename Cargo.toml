@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "jp2",
+  "jpc",
   "jpeg2000"
-]
+  ]
 
 default-members = ["jpeg2000"]

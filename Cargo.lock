@@ -67,7 +67,13 @@ version = "0.1.0"
 dependencies = [
  "env_logger",
  "jp2",
- "jpxml",
+]
+
+[[package]]
+name = "jpc"
+version = "0.1.0"
+dependencies = [
+ "log",
 ]
 
 [[package]]

@@ -7,7 +7,7 @@ use std::io;
 use std::str;
 
 #[derive(Debug)]
-enum JP2Error {
+pub enum JP2Error {
     InvalidSignature {
         signature: [u8; 4],
         offset: u64,
@@ -350,11 +350,9 @@ impl JBox for FileTypeBox {
         reader.read_exact(&mut self.min_version)?;
 
         // The number of CL fields is determined by the length of this box
-        let mut size = self.length - 12;
+        let mut size = self.length - 8;
 
         let mut buffer: [u8; 4] = [0; 4];
-        // TODO: Determine whether next 4 bytes are the CL size
-        reader.read_exact(&mut buffer)?;
         while size > 0 {
             reader.read_exact(&mut buffer)?;
             self.compatibility_list.extend_from_slice(&[buffer]);
@@ -402,8 +400,7 @@ impl JBox for FileTypeBox {
 // box.
 //
 // - Colour Specification boxes - These boxes specify the colourspace of the
-// decompressed image. There shall be at least one Colour Specification box
-// within the JP2 Header box. The use of multiple Colour Specification boxes
+// decompressed image. The use of multiple Colour Specification boxes
 // provides the ability for a decoder to be given multiple optimization or
 // compatibility options for colour processing. These boxes may be found
 // anywhere in the JP2 Header box provided that they come after the Image Header
@@ -511,7 +508,6 @@ impl JBox for HeaderBox {
                 }
                 BoxTypes::BitsPerComponent => {
                     let components_num = self.image_header_box.components_num();
-                    // TODO: Check image header box defined
                     let mut bits_per_component_box = BitsPerComponentBox {
                         components_num,
                         bits_per_component: vec![0; components_num as usize],
@@ -588,11 +584,18 @@ impl JBox for HeaderBox {
             }
         }
 
+        // There shall be at least one Colour Specification box
+        // within the JP2 Header box.
+        if self.colour_specification_boxes.len() == 0 {
+            return Err(JP2Error::BoxMalformed {
+                box_type: BOX_TYPE_IMAGE_HEADER,
+                offset: reader.stream_position()?,
+            }
+            .into());
+        }
+
         // TODO
         // Check that all u16/i16 are correct / big endian is correct
-        // check if components bit depth is 255 and if it is, check for Bits Per Component box
-        // check if intellectual property box if image header suggests it
-        // but must contain at least one colour specification box
 
         Ok(())
     }

@@ -1,0 +1,45 @@
+0000: FF4F SOC marker
+0002: FF51 SIZ marker
+0004: 0029 Lsiz
+0006: 0000 Rsiz
+0008: 0000 0001 Xsiz
+0012: 0000 0009 YSiz
+0016: 0000 0000 XOsiz
+0020: 0000 0000 YOsiz
+0024: 0000 0001 XTsiz
+0028: 0000 0009 YTsiz
+0032: 0000 0000 XTOsiz
+0036: 0000 0000 YTOsiz
+0040: 0001 Csiz
+0042: 07 Ssiz
+0043: 01 XRsiz
+0044: 01 YRsiz
+
+0045: FF5C QCD marker
+0047: 0007 Lqcd
+0049: 40 Sqcd
+0050: 4048 4850 SPqcd
+
+0054: FF52 COD marker
+0056: 000C Lcod
+0058: 00 Scod (PPx = PPy = 15, No SOP, No EPH)
+0059: 00 Progression order
+0060: 0001 Number of layers
+0062: 00 Multiple component transform
+0063: 01 Number of decomposition levels
+0064: 04 Code-block width exponent offset value
+0065: 04 Code-block height exponent offset value
+0066: 00 Style of the code-block coding passes
+0067: 01 Transform
+
+0068: FF90 SOT marker
+0070: 000A Lsot
+0072: 0000 Isot
+0074: 0000 001E Psot
+0076: 00 TPsot
+0077: 01 TNsot
+0078: FF93 SOD marker
+0080: C7D4 0C01 8F0D C875 5DC0 7C21 800F B176 Compressed data (packet headers and packet bodies)
+0096: FFD9 EOC marker
+
+END = 0100

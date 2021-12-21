@@ -1,0 +1,40 @@
+<xjp:jp2c type="box">
+    <xjp:SIZ type="marker" length="41" offset="4">
+      <xjp:Rsiz>0</xjp:Rsiz>
+      <xjp:Xsiz>1</xjp:Xsiz>
+      <xjp:Ysiz>9</xjp:Ysiz>
+      <xjp:OXsiz>0</xjp:OXsiz>
+      <xjp:OYsiz>0</xjp:OYsiz>
+      <xjp:XTsiz>1</xjp:XTsiz>
+      <xjp:YTsiz>9</xjp:YTsiz>
+      <xjp:XTOsiz>0</xjp:XTOsiz>
+      <xjp:YTOsiz>0</xjp:YTOsiz>
+      <xjp:Csiz>1</xjp:Csiz>
+      <xjp:Ssiz>1</xjp:Ssiz>
+      <xjp:XRsiz>1</xjp:XRsiz>
+      <xjp:YRsiz>1</xjp:YRsiz>
+    </xjp:SIZ>
+    <xjp:COD type="marker" length="12" offset="56">
+      <xjp:Scod>0</xjp:Scod>
+      <xjp:SGcod>
+        <xjp:progression>LRLCPP</xjp:progression>
+        <xjp:num_layers>1</xjp:num_layers>
+        <xjp:colour_conv>None</xjp:colour_conv>
+      </xjp:SGcod>
+      <xjp:SPcod>
+        <xjp:num_levels>1</xjp:num_levels>
+        <xjp:xcb>4</xjp:xcb>
+        <xjp:ycb>4</xjp:ycb>
+        <xjp:style>0</yjp:style>
+        <xjp:wavelet>Reversible</yjp:wavelet>
+      </xjp:SPcod>
+    </xjp:COD>
+    <xjp:QCD>
+      <xjp:Sqcd>64<xjp:Sqcd>
+      <xjp:SPqcd>64<xjp:SPqcd>
+      <xjp:SPqcd>72<xjp:SPqcd>
+      <xjp:SPqcd>72<xjp:SPqcd>
+      <xjp:SPqcd>80<xjp:SPqcd>
+    </xjp:QCD>
+  </xjp:jp2c>
+</xjp:jpxml>

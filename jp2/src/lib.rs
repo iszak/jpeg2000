@@ -28,6 +28,9 @@ pub enum JP2Error {
         box_type: BoxType,
         offset: u64,
     },
+    BoxMissing {
+        box_type: BoxType,
+    },
 }
 
 impl error::Error for JP2Error {}
@@ -63,6 +66,9 @@ impl fmt::Display for JP2Error {
             Self::BoxMalformed { box_type, offset } => {
                 write!(f, "malformed box type {:?} at offset {}", box_type, offset)
             }
+            Self::BoxMissing { box_type } => {
+                write!(f, "box type {:?} missing", box_type)
+            }
             Self::Unsupported => {
                 write!(
                     f,
@@ -92,7 +98,7 @@ const BOX_TYPE_XML: BoxType = [120, 109, 108, 32];
 const BOX_TYPE_UUID: BoxType = [117, 117, 105, 100];
 const BOX_TYPE_UUID_INFO: BoxType = [117, 105, 110, 102];
 const BOX_TYPE_UUID_LIST: BoxType = [117, 108, 115, 116];
-const BOX_TYPE_UUID_DATA_ENTRY_URL: BoxType = [117, 114, 108, 32];
+const BOX_TYPE_DATA_ENTRY_URL: BoxType = [117, 114, 108, 32];
 
 // jp2\040
 const BRAND_JP2: [u8; 4] = [106, 112, 50, 32];
@@ -123,7 +129,7 @@ enum BoxTypes {
     UUID,
     UUIDInfo,
     UUIDList,
-    UUIDDataEntryURL,
+    DataEntryURL,
     Unknown,
 }
 
@@ -157,7 +163,7 @@ impl BoxTypes {
             BOX_TYPE_UUID => BoxTypes::UUID,
             BOX_TYPE_UUID_INFO => BoxTypes::UUIDInfo,
             BOX_TYPE_UUID_LIST => BoxTypes::UUIDList,
-            BOX_TYPE_UUID_DATA_ENTRY_URL => BoxTypes::UUIDDataEntryURL,
+            BOX_TYPE_DATA_ENTRY_URL => BoxTypes::DataEntryURL,
             _ => BoxTypes::Unknown,
         }
     }
@@ -1911,6 +1917,218 @@ impl JBox for UUIDBox {
     }
 }
 
+// I.7.3
+//
+// UUID Info box (superbox)
+//
+// While it is useful to allow vendors to extend JP2 files by adding information
+// using UUID boxes, it is also useful to provide information in a standard form
+// which can be used by non-extended applications to get more information about
+// the extensions in the file. This information is contained in UUID Info boxes.
+//
+// A JP2 file may contain zero or more UUID Info boxes.
+//
+// These boxes may be found anywhere in the top level of the file (the superbox
+// of a UUID Info box shall be the JP2 file itself) except before the File Type
+// box.
+//
+// These boxes, if present, may not provide a complete index for the UUIDs in
+// the file, may reference UUIDs not used in the file, and possibly may provide
+// multiple references for the same UUID
+#[derive(Debug, Default)]
+pub struct UUIDInfoSuperBox {
+    length: u64,
+    offset: u64,
+    uuid_list: Vec<UUIDListBox>,
+    data_entry_url_box: Vec<DataEntryURLBox>,
+}
+
+impl JBox for UUIDInfoSuperBox {
+    // The type of a UUID Info box shall be 'uinf' (0x7569 6E66)
+    fn identifier(&self) -> BoxType {
+        BOX_TYPE_UUID_INFO
+    }
+
+    fn length(&self) -> u64 {
+        self.length
+    }
+
+    fn offset(&self) -> u64 {
+        self.offset
+    }
+
+    fn decode<R: io::Read + io::Seek>(
+        &mut self,
+        _reader: &mut R,
+    ) -> Result<(), Box<dyn error::Error>> {
+        Ok(())
+    }
+}
+
+// I.7.3.1
+//
+// UUID List box
+//
+// This box contains a list of UUIDs.
+#[derive(Debug, Default)]
+pub struct UUIDListBox {
+    length: u64,
+    offset: u64,
+
+    // NU: Number of UUIDs.
+    //
+    // This field specifies the number of UUIDs found in this UUID List box.
+    //
+    // This field is encoded as a 2-byte big-endian unsigned integer.
+    number_of_uuids: [u8; 2],
+
+    // ID^i: ID
+    //
+    // This field specifies one UUID, as specified in ISO/IEC 11578, which
+    // shall be associated with the URL contained in the URL box within the
+    // same UUID Info box.
+    //
+    // The number of UUIDi fields shall be the same as the value of the NU
+    // field.
+    //
+    // The value of this field shall be a 16-byte UUID
+    ids: Vec<[u8; 16]>,
+}
+
+impl UUIDListBox {
+    fn ids(&self) -> Vec<&str> {
+        self.ids
+            .iter()
+            .map(|id| str::from_utf8(id).unwrap())
+            .collect()
+    }
+    fn number_of_uuids(&self) -> i16 {
+        i16::from_be_bytes(self.number_of_uuids)
+    }
+}
+
+impl JBox for UUIDListBox {
+    // The type of a UUID List box shall be ‘ulst’ (0x756C 7374)
+    fn identifier(&self) -> BoxType {
+        BOX_TYPE_UUID_LIST
+    }
+
+    fn length(&self) -> u64 {
+        self.length
+    }
+
+    fn offset(&self) -> u64 {
+        self.offset
+    }
+
+    fn decode<R: io::Read + io::Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> Result<(), Box<dyn error::Error>> {
+        reader.read_exact(&mut self.number_of_uuids)?;
+
+        let mut size = self.number_of_uuids() as usize;
+
+        self.ids = Vec::with_capacity(size);
+
+        let mut buffer: [u8; 16] = [0; 16];
+        while size > 0 {
+            reader.read_exact(&mut buffer)?;
+            self.ids.extend_from_slice(&[buffer]);
+            size -= 1;
+        }
+
+        Ok(())
+    }
+}
+
+// I.7.3.2
+//
+// Data Entry URL box
+//
+// This box contains a URL which can be used by an application to acquire more
+// information about the associated vendor-specific extensions.
+//
+// The format of the information acquired through the use of this URL is not
+// defined in this Recommendation | International Standard.
+//
+// The URL type should be of a service which delivers a file (e.g., URLs of
+// type file, http, ftp, etc.), which ideally also permits random access.
+//
+// Relative URLs are permissible and are relative to the file containing this
+// Data Entry URL box.
+#[derive(Debug, Default)]
+pub struct DataEntryURLBox {
+    length: u64,
+    offset: u64,
+
+    // VERS: Version number.
+    //
+    // This field specifies the version number of the format of this box and is
+    // encoded as a 1-byte unsigned integer.
+    //
+    // The value of this field shall be 0.
+    version: [u8; 1],
+
+    // FLAG: Flags.
+    //
+    // This field is reserved for other uses to flag particular attributes of
+    // this box and is encoded as a 3-byte unsigned integer.
+    //
+    // The value of this field shall be 0.
+    flags: [u8; 3],
+
+    // LOC: Location.
+    //
+    // This field specifies the URL of the additional information associated
+    // with the UUIDs contained in the UUID List box within the same UUID Info
+    // superbox.
+    //
+    // The URL is encoded as a null terminated string of UTF-8 characters.
+    location: Vec<u8>,
+}
+
+impl DataEntryURLBox {
+    fn location(&self) -> Result<&str, str::Utf8Error> {
+        str::from_utf8(&self.location)
+    }
+}
+
+impl JBox for DataEntryURLBox {
+    // The type of a Data Entry URL box shall be 'url\040' (0x7572 6C20).
+    fn identifier(&self) -> BoxType {
+        BOX_TYPE_DATA_ENTRY_URL
+    }
+
+    fn length(&self) -> u64 {
+        self.length
+    }
+
+    fn offset(&self) -> u64 {
+        self.offset
+    }
+
+    fn decode<R: io::Read + io::Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> Result<(), Box<dyn error::Error>> {
+        reader.read_exact(&mut self.version)?;
+        reader.read_exact(&mut self.flags)?;
+
+        // location
+        let mut size = self.length() - 4;
+
+        let mut buffer: [u8; 1] = [0; 1];
+        while size > 0 {
+            reader.read_exact(&mut buffer)?;
+            self.location.extend_from_slice(&buffer);
+            size -= 1;
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 enum CommentRegistrationValue {
     // General use (binary values)
@@ -2465,6 +2683,8 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
 
     let mut xml_boxes: Vec<XMLBox> = vec![];
     let mut uuid_boxes: Vec<UUIDBox> = vec![];
+    let mut uuid_info_boxes: Vec<UUIDInfoSuperBox> = vec![];
+    let mut current_uuid_info_box: Option<UUIDInfoSuperBox> = None;
 
     loop {
         let BoxHeader {
@@ -2533,6 +2753,64 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 uuid_boxes.push(uuid_box);
                 info!("UUIDBox finish at {:?}", reader.stream_position()?);
             }
+            BoxTypes::UUIDInfo => {
+                let mut uuid_info_box = UUIDInfoSuperBox::default();
+                uuid_info_box.length = box_length;
+                uuid_info_box.offset = reader.stream_position()?;
+                info!("UUIDInfoBox start at {:?}", uuid_info_box.offset);
+                uuid_info_box.decode(reader)?;
+
+                if current_uuid_info_box.is_some() {
+                    uuid_info_boxes.push(current_uuid_info_box.unwrap());
+                }
+                current_uuid_info_box = Some(uuid_info_box);
+                info!("UUIDInfoBox finish at {:?}", reader.stream_position()?);
+            }
+            BoxTypes::UUIDList => {
+                let mut uuid_list_box = UUIDListBox::default();
+                uuid_list_box.length = box_length;
+                uuid_list_box.offset = reader.stream_position()?;
+                info!("UUIDListBox start at {:?}", uuid_list_box.offset);
+                uuid_list_box.decode(reader)?;
+                match &mut current_uuid_info_box {
+                    Some(uuid_info_box) => {
+                        uuid_info_box.uuid_list.push(uuid_list_box);
+                    }
+                    None => {
+                        return Err(JP2Error::BoxMissing {
+                            box_type: BOX_TYPE_UUID_INFO,
+                        }
+                        .into());
+                    }
+                }
+                info!("UUIDListBox finish at {:?}", reader.stream_position()?);
+            }
+            BoxTypes::DataEntryURL => {
+                let mut data_entry_url_box = DataEntryURLBox {
+                    length: box_length,
+                    offset: reader.stream_position()?,
+                    version: [0; 1],
+                    flags: [0; 3],
+                    location: Vec::with_capacity(box_length as usize - 4).to_owned(),
+                };
+
+                data_entry_url_box.length = box_length;
+                data_entry_url_box.offset = reader.stream_position()?;
+                info!("DataEntryURLBox start at {:?}", data_entry_url_box.offset);
+                data_entry_url_box.decode(reader)?;
+                match &mut current_uuid_info_box {
+                    Some(uuid_info_box) => {
+                        uuid_info_box.data_entry_url_box.push(data_entry_url_box)
+                    }
+                    None => {
+                        return Err(JP2Error::BoxMissing {
+                            box_type: BOX_TYPE_UUID_INFO,
+                        }
+                        .into());
+                    }
+                }
+                info!("DataEntryURLBox finish at {:?}", reader.stream_position()?);
+            }
             BoxTypes::ContiguousCodestream => {
                 // The Header box shall fall before the Contiguous Codestream box
                 if header_box_option.is_none() {
@@ -2567,6 +2845,10 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 );
             }
         }
+    }
+
+    if current_uuid_info_box.is_some() {
+        uuid_info_boxes.push(current_uuid_info_box.unwrap());
     }
 
     let result = JP2File {

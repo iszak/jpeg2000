@@ -623,7 +623,7 @@ impl RegionOfInterestStyle {
 //
 // Function: Signals the presence of an ROI in the codestream.
 #[derive(Debug, Default)]
-pub struct RegionOfInterest {
+pub struct RegionOfInterestSegment {
     offset: u64,
 
     // Lrgn: Length of marker segment in bytes (not including the marker)
@@ -712,7 +712,7 @@ impl DecoderCapability {
 // individual tile-part length in the TLM marker segment is the same as the
 // value in the corresponding Psot in the SOT marker segment.
 #[derive(Debug, Default)]
-pub struct TilePartLengths {
+pub struct TilePartLengthsSegment {
     offset: u64,
 
     // Ltlm: Length of marker segment in bytes (not including the marker).
@@ -728,7 +728,7 @@ pub struct TilePartLengths {
     tile_part_lengths: Vec<TilePartLength>,
 }
 
-impl TilePartLengths {
+impl TilePartLengthsSegment {
     fn parameter_sizes(&self) -> Vec<TilePartParameterSize> {
         TilePartParameterSize::new(self.parameter_sizes[0])
     }
@@ -787,7 +787,7 @@ impl TilePartParameterSize {
 // Function: A list of packet lengths in the tile-parts for every tile-part in
 // order.
 #[derive(Debug, Default)]
-pub struct PacketLength {
+pub struct PacketLengthSegment {
     offset: u64,
 
     // Lplm: Length of marker segment in bytes (not including the marker).
@@ -831,7 +831,7 @@ pub struct PacketLength {
     packet_length: Vec<u8>,
 }
 
-impl PacketLength {
+impl PacketLengthSegment {
     fn no_bytes(&self) -> u8 {
         u8::from_be_bytes(self.no_bytes)
     }
@@ -879,7 +879,7 @@ pub struct TilePacketLength {
 //
 // This marker segment has no effect on decoding the codestream.
 #[derive(Debug, Default)]
-pub struct ComponentRegistration {
+pub struct ComponentRegistrationSegment {
     offset: u64,
 
     // Lcrg: Length of marker segment in bytes (not including the marker).
@@ -1549,9 +1549,9 @@ impl ContiguousCodestream {
         &mut self,
         reader: &mut R,
         no_components: u16,
-    ) -> Result<RegionOfInterest, Box<dyn error::Error>> {
+    ) -> Result<RegionOfInterestSegment, Box<dyn error::Error>> {
         info!("RGN start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = RegionOfInterest::default();
+        let mut segment = RegionOfInterestSegment::default();
 
         segment.offset = reader.stream_position()?;
         segment.length = self.decode_length(reader)?;
@@ -1614,9 +1614,9 @@ impl ContiguousCodestream {
     fn decode_tlm<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
-    ) -> Result<TilePartLengths, Box<dyn error::Error>> {
+    ) -> Result<TilePartLengthsSegment, Box<dyn error::Error>> {
         info!("TLM start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = TilePartLengths::default();
+        let mut segment = TilePartLengthsSegment::default();
         segment.offset = reader.stream_position()?;
         segment.length = self.decode_length(reader)?;
         reader.read_exact(&mut segment.parameter_sizes)?;
@@ -1773,9 +1773,9 @@ impl ContiguousCodestream {
     fn decode_plm<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
-    ) -> Result<PacketLength, Box<dyn error::Error>> {
+    ) -> Result<PacketLengthSegment, Box<dyn error::Error>> {
         info!("PLM start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = PacketLength::default();
+        let mut segment = PacketLengthSegment::default();
 
         segment.offset = reader.stream_position()?;
         segment.length = self.decode_length(reader)?;
@@ -1850,9 +1850,9 @@ impl ContiguousCodestream {
         &mut self,
         reader: &mut R,
         no_components: u16,
-    ) -> Result<ComponentRegistration, Box<dyn error::Error>> {
+    ) -> Result<ComponentRegistrationSegment, Box<dyn error::Error>> {
         info!("CRG start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = ComponentRegistration::default();
+        let mut segment = ComponentRegistrationSegment::default();
 
         segment.offset = reader.stream_position()?;
         segment.length = self.decode_length(reader)?;
@@ -1917,7 +1917,7 @@ pub struct Header {
     quantization_component_segments: Vec<QuantizationComponentSegment>,
 
     // RGN (Optional)
-    regions: Vec<RegionOfInterest>,
+    regions: Vec<RegionOfInterestSegment>,
 
     // POC (Required)
     progression_order_change: ProgressionOrderChangeSegment,
@@ -1926,13 +1926,13 @@ pub struct Header {
     // TODO
 
     // TLM (Optional)
-    tile_part_lengths: TilePartLengths,
+    tile_part_lengths: TilePartLengthsSegment,
 
     // PLM (Optional)
-    packet_lengths: Vec<PacketLength>,
+    packet_lengths: Vec<PacketLengthSegment>,
 
     // CRG (Optional)
-    component_registration: ComponentRegistration,
+    component_registration: ComponentRegistrationSegment,
 
     // COM (Optional)
     comment_marker_segment: Option<CommentMarkerSegment>,
@@ -2009,7 +2009,7 @@ struct TileHeader {
     quantization_component_segment: QuantizationComponentSegment,
 
     // RGN (Optional)
-    regions: Vec<RegionOfInterest>,
+    regions: Vec<RegionOfInterestSegment>,
 
     // POC (Required)
     progression_order_change: ProgressionOrderChangeSegment,
@@ -2018,7 +2018,7 @@ struct TileHeader {
     // TODO
 
     // PLT (Optional)
-    packet_lengths: Vec<PacketLength>,
+    packet_lengths: Vec<PacketLengthSegment>,
 
     // COM (Optional)
     comment_marker_segment: Option<CommentMarkerSegment>,

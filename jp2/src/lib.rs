@@ -361,12 +361,10 @@ impl JBox for FileTypeBox {
 
         reader.read_exact(&mut self.min_version)?;
 
-        // The number of CL fields is determined by the length of this box
         let mut buffer: [u8; 4] = [0; 4];
-        // TODO: Verify first u32 is number of CL
-        reader.read_exact(&mut buffer)?;
 
-        let mut size = u32::from_be_bytes(buffer);
+        // The number of CL fields is determined by the length of this box
+        let mut size = (self.length() - 8) / 4;
         while size > 0 {
             reader.read_exact(&mut buffer)?;
             self.compatibility_list.extend_from_slice(&[buffer]);

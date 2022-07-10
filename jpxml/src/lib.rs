@@ -4,7 +4,7 @@ use core::fmt::Write;
 use jp2::{
     decode_jp2, BitsPerComponentBox, CaptureResolutionBox, ChannelDefinitionBox,
     ColourSpecificationBox, ComponentMappingBox, ContiguousCodestreamBox,
-    DefaultDisplayResolutionBox, FileTypeBox, HeaderBox, JBox, PaletteBox, ResolutionBox,
+    DefaultDisplayResolutionBox, FileTypeBox, HeaderSuperBox, JBox, PaletteBox, ResolutionSuperBox,
     SignatureBox, UUIDBox, XMLBox,
 };
 use jpc::{
@@ -161,17 +161,17 @@ fn encode_file_type_box<W: io::Write>(
     Ok(())
 }
 
-fn encode_header_box<W: io::Write>(
+fn encode_header_super_box<W: io::Write>(
     writer: &mut W,
-    header_box: &HeaderBox,
+    header_super_box: &HeaderSuperBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    let image_header_box = &header_box.image_header_box;
+    let image_header_box = &header_super_box.image_header_box;
 
     write!(
         writer,
         "  <xjp:jp2h type=\"box\" length=\"{}\" offset=\"{}\">\n",
-        header_box.length(),
-        header_box.offset()
+        header_super_box.length(),
+        header_super_box.offset()
     )?;
     write!(
         writer,
@@ -216,24 +216,24 @@ fn encode_header_box<W: io::Write>(
     )?;
     writer.write(b"    </xjp:ihdr>\n")?;
 
-    if let Some(bits_per_component_box) = &header_box.bits_per_component_box {
+    if let Some(bits_per_component_box) = &header_super_box.bits_per_component_box {
         encode_bits_per_component_box(writer, bits_per_component_box)?;
     }
 
-    for colour_specification_box in &header_box.colour_specification_boxes {
+    for colour_specification_box in &header_super_box.colour_specification_boxes {
         encode_colour_specification_box(writer, colour_specification_box)?;
     }
 
-    if let Some(palette_box) = &header_box.palette_box {
+    if let Some(palette_box) = &header_super_box.palette_box {
         encode_palette_box(writer, palette_box)?;
     }
-    if let Some(component_mapping_box) = &header_box.component_mapping_box {
+    if let Some(component_mapping_box) = &header_super_box.component_mapping_box {
         encode_component_mapping_box(writer, component_mapping_box)?;
     }
-    if let Some(channel_definition_box) = &header_box.channel_definition_box {
+    if let Some(channel_definition_box) = &header_super_box.channel_definition_box {
         encode_channel_definition_box(writer, channel_definition_box)?;
     }
-    if let Some(resolution_box) = &header_box.resolution_box {
+    if let Some(resolution_box) = &header_super_box.resolution_box {
         encode_resolution_box(writer, resolution_box)?;
     }
 
@@ -410,7 +410,7 @@ fn encode_channel_definition_box<W: io::Write>(
 
 fn encode_resolution_box<W: io::Write>(
     writer: &mut W,
-    resolution_box: &ResolutionBox,
+    resolution_box: &ResolutionSuperBox,
 ) -> Result<(), Box<dyn error::Error>> {
     write!(
         writer,
@@ -871,7 +871,7 @@ pub fn encode_jp2<W: io::Write>(
 
     // TODO: Check if header box is optional
     if let Some(header_box) = jp2.header_box() {
-        encode_header_box(writer, header_box)?;
+        encode_header_super_box(writer, header_box)?;
     }
 
     for xml_box in jp2.xml_boxes() {

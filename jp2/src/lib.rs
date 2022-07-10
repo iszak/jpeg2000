@@ -458,7 +458,7 @@ impl JBox for FileTypeBox {
 // resolutions of the image. This box may be found anywhere in the JP2 Header
 // box provided that it comes after the Image Header box.
 #[derive(Debug, Default)]
-pub struct HeaderBox {
+pub struct HeaderSuperBox {
     length: u64,
     offset: u64,
     pub image_header_box: ImageHeaderBox,
@@ -470,7 +470,7 @@ pub struct HeaderBox {
     pub resolution_box: Option<ResolutionSuperBox>,
 }
 
-impl JBox for HeaderBox {
+impl JBox for HeaderSuperBox {
     // The type of the JP2 Header box shall be ‘jp2h’ (0x6A70 3268)
     fn identifier(&self) -> BoxType {
         BOX_TYPE_HEADER
@@ -2578,7 +2578,7 @@ pub struct JP2File {
     length: u64,
     signature: Option<SignatureBox>,
     file_type: Option<FileTypeBox>,
-    header: Option<HeaderBox>,
+    header: Option<HeaderSuperBox>,
     contiguous_codestreams: Vec<ContiguousCodestreamBox>,
     xml: Vec<XMLBox>,
     uuid: Vec<UUIDBox>,
@@ -2594,7 +2594,7 @@ impl JP2File {
     pub fn file_type_box(&self) -> &Option<FileTypeBox> {
         &self.file_type
     }
-    pub fn header_box(&self) -> &Option<HeaderBox> {
+    pub fn header_box(&self) -> &Option<HeaderSuperBox> {
         &self.header
     }
     pub fn contiguous_codestreams_boxes(&self) -> &Vec<ContiguousCodestreamBox> {
@@ -2732,7 +2732,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
     file_type_box.decode(reader)?;
     info!("FileTypeBox finish at {:?}", reader.stream_position()?);
 
-    let mut header_box_option: Option<HeaderBox> = None;
+    let mut header_box_option: Option<HeaderSuperBox> = None;
     let mut contiguous_codestream_boxes: Vec<ContiguousCodestreamBox> = vec![];
 
     let mut xml_boxes: Vec<XMLBox> = vec![];
@@ -2763,13 +2763,13 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 // The header box must be at the same level as the Signature
                 // and File Type boxes it shall not be inside any other
                 // superbox within the file)
-                info!("HeaderBox start at {:?}", reader.stream_position()?);
-                let mut header_box = HeaderBox::default();
+                info!("HeaderSuperBox start at {:?}", reader.stream_position()?);
+                let mut header_box = HeaderSuperBox::default();
                 header_box.length = box_length;
                 header_box.offset = reader.stream_position()?;
                 header_box.decode(reader)?;
                 header_box_option = Some(header_box);
-                info!("HeaderBox finish at {:?}", reader.stream_position()?);
+                info!("HeaderSuperBox finish at {:?}", reader.stream_position()?);
             }
             BoxTypes::IntellectualProperty => {
                 let mut intellectual_property_box = IntellectualPropertyBox {

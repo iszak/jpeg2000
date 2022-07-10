@@ -608,7 +608,7 @@ impl CodingStyleParameters {
     }
 
     pub fn has_precinct_size(&self) -> bool {
-        self.coding_style[0] << 7 >> 7 == 0b_0000_0000
+        self.coding_style[0] << 7 >> 7 != 0b_0000_0000
     }
 
     pub fn precinct_sizes(&self) -> Option<Vec<CodingStyleParametersPrecinctSize>> {
@@ -1532,7 +1532,7 @@ impl ContiguousCodestream {
         // otherwise this indicates precinct width and height.
         if coding_style_parameters.has_precinct_size() {
             coding_style_parameters.precinct_size =
-                Vec::with_capacity(coding_style_parameters.no_decomposition_levels() as usize + 1);
+                vec![0; coding_style_parameters.no_decomposition_levels() as usize + 1];
             reader.read_exact(&mut coding_style_parameters.precinct_size)?;
         }
 

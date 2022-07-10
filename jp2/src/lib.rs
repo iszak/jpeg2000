@@ -24,6 +24,10 @@ pub enum JP2Error {
         box_type: BoxType,
         offset: u64,
     },
+    BoxDuplicate {
+        box_type: BoxType,
+        offset: u64,
+    },
     BoxMalformed {
         box_type: BoxType,
         offset: u64,
@@ -58,6 +62,13 @@ impl fmt::Display for JP2Error {
                     f,
                     "'jp2\\040' not found in compatibility list {:?}",
                     compatibility_list
+                )
+            }
+            Self::BoxDuplicate { box_type, offset } => {
+                write!(
+                    f,
+                    "unexpected duplicate box type {:?} at offset {}",
+                    box_type, offset
                 )
             }
             Self::BoxUnexpected { box_type, offset } => {
@@ -456,7 +467,7 @@ pub struct HeaderBox {
     pub palette_box: Option<PaletteBox>,
     pub component_mapping_box: Option<ComponentMappingBox>,
     pub channel_definition_box: Option<ChannelDefinitionBox>,
-    pub resolution_box: Option<ResolutionBox>,
+    pub resolution_box: Option<ResolutionSuperBox>,
 }
 
 impl JBox for HeaderBox {
@@ -531,6 +542,14 @@ impl JBox for HeaderBox {
                     );
                 }
                 BoxTypes::BitsPerComponent => {
+                    // There shall be one and only one Bits Per Component box inside a JP2 Header box.
+                    if self.bits_per_component_box.is_some() {
+                        return Err(JP2Error::BoxDuplicate {
+                            box_type: BOX_TYPE_BITS_PER_COMPONENT,
+                            offset: reader.stream_position()?,
+                        }
+                        .into());
+                    }
                     let components_num = self.image_header_box.components_num();
                     let mut bits_per_component_box = BitsPerComponentBox {
                         components_num,
@@ -550,6 +569,14 @@ impl JBox for HeaderBox {
                     );
                 }
                 BoxTypes::Palette => {
+                    // There shall be at most one Palette box inside a JP2 Header box.
+                    if self.palette_box.is_some() {
+                        return Err(JP2Error::BoxDuplicate {
+                            box_type: BOX_TYPE_PALETTE,
+                            offset: reader.stream_position()?,
+                        }
+                        .into());
+                    }
                     let mut palette_box = PaletteBox::default();
                     palette_box.length = box_length;
                     palette_box.offset = reader.stream_position()?;
@@ -559,6 +586,15 @@ impl JBox for HeaderBox {
                     info!("PaletteBox finish at {:?}", reader.stream_position()?);
                 }
                 BoxTypes::ComponentMapping => {
+                    // There shall be at most one Component Mapping box inside a JP2 Header box.
+                    if self.component_mapping_box.is_some() {
+                        return Err(JP2Error::BoxDuplicate {
+                            box_type: BOX_TYPE_COMPONENT_MAPPING,
+                            offset: reader.stream_position()?,
+                        }
+                        .into());
+                    }
+
                     let mut component_mapping_box = ComponentMappingBox {
                         length: box_length,
                         offset: reader.stream_position()?,
@@ -576,6 +612,15 @@ impl JBox for HeaderBox {
                     self.component_mapping_box = Some(component_mapping_box);
                 }
                 BoxTypes::ChannelDefinition => {
+                    // There shall be at most one Channel Definition box inside a JP2 Header box.
+                    if self.channel_definition_box.is_some() {
+                        return Err(JP2Error::BoxDuplicate {
+                            box_type: BOX_TYPE_CHANNEL_DEFINITION,
+                            offset: reader.stream_position()?,
+                        }
+                        .into());
+                    }
+
                     let mut channel_definition_box = ChannelDefinitionBox::default();
                     channel_definition_box.length = box_length;
                     channel_definition_box.offset = reader.stream_position()?;
@@ -591,7 +636,16 @@ impl JBox for HeaderBox {
                     self.channel_definition_box = Some(channel_definition_box);
                 }
                 BoxTypes::Resolution => {
-                    let mut resolution_box = ResolutionBox::default();
+                    // There shall be at most one Resolution box inside a JP2 Header box.
+                    if self.resolution_box.is_some() {
+                        return Err(JP2Error::BoxDuplicate {
+                            box_type: BOX_TYPE_RESOLUTION,
+                            offset: reader.stream_position()?,
+                        }
+                        .into());
+                    }
+
+                    let mut resolution_box = ResolutionSuperBox::default();
                     resolution_box.length = box_length;
                     resolution_box.offset = reader.stream_position()?;
                     info!("ResolutionBox start at {:?}", resolution_box.offset);
@@ -1655,7 +1709,7 @@ impl JBox for ColourSpecificationBox {
 // This box specifies the capture and default display grid resolutions of this
 // image.
 #[derive(Debug, Default)]
-pub struct ResolutionBox {
+pub struct ResolutionSuperBox {
     length: u64,
     offset: u64,
 
@@ -1670,7 +1724,7 @@ pub struct ResolutionBox {
     // should be displayed.
     default_display_resolution_box: Option<DefaultDisplayResolutionBox>,
 }
-impl ResolutionBox {
+impl ResolutionSuperBox {
     pub fn capture_resolution_box(&self) -> &Option<CaptureResolutionBox> {
         &self.capture_resolution_box
     }
@@ -1680,7 +1734,7 @@ impl ResolutionBox {
     }
 }
 
-impl JBox for ResolutionBox {
+impl JBox for ResolutionSuperBox {
     fn identifier(&self) -> BoxType {
         BOX_TYPE_RESOLUTION
     }

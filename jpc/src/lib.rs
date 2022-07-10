@@ -245,6 +245,7 @@ impl CodingBlockStyle {
     }
 }
 
+// A.13 – Coding style parameter values for the Scod parameter
 #[derive(Debug, PartialEq)]
 pub enum CodingStyleDefault {
     // xxxx xxx0 Entropy coder, precincts with PPx = 15 and PPy = 15
@@ -376,6 +377,8 @@ impl TransformationFilter {
     }
 }
 
+// A.4.2
+//
 // Start of tile-part (SOT)
 //
 // Function: Marks the beginning of a tile-part, the index of its tile, and the
@@ -421,6 +424,8 @@ pub struct StartOfTileSegment {
     no_tile_parts: [u8; 1],
 }
 
+// A.12
+//
 // Coding style default (COD)
 //
 // Function: Describes the coding style, number of decomposition levels,
@@ -483,6 +488,8 @@ impl CodingStyleMarkerSegment {
     }
 }
 
+// A.6.2
+//
 // Coding style component (COC)
 //
 // Function: Describes the coding style, number of decomposition levels, and
@@ -538,6 +545,7 @@ impl CodingStyleParametersPrecinctSize {
     }
 }
 
+// A.12 – Coding style default parameter values
 #[derive(Debug, Default)]
 pub struct CodingStyleParameters {
     // Coding style
@@ -619,6 +627,8 @@ impl RegionOfInterestStyle {
     }
 }
 
+// A.6.3
+//
 // Region of interest (RGN)
 //
 // Function: Signals the presence of an ROI in the codestream.
@@ -640,6 +650,8 @@ pub struct RegionOfInterestSegment {
     region_of_interest_style_parameter: [u8; 1],
 }
 
+// A.6.6
+//
 // Progression order change (POC)
 //
 // Function: Describes the bounds and progression order for any progression
@@ -704,6 +716,8 @@ impl DecoderCapability {
     }
 }
 
+// A.7.1
+//
 // Tile-part lengths (TLM)
 //
 // Function: Describes the length of every tile-part in the codestream. Each
@@ -782,6 +796,8 @@ impl TilePartParameterSize {
     }
 }
 
+// A.7.2
+//
 // Packet length, main header (PLM)
 //
 // Function: A list of packet lengths in the tile-parts for every tile-part in
@@ -837,6 +853,8 @@ impl PacketLengthSegment {
     }
 }
 
+// A.7.3
+//
 // Packet length, tile-part header (PLT)
 //
 // Function: A list of packet lengths in the tile-part
@@ -904,6 +922,8 @@ pub struct ComponentRegistrationSegment {
     vertical_offset: Vec<[u8; 2]>,
 }
 
+// A.5.1
+//
 // Image and tile size (SIZ)
 //
 // Function: Provides information about the uncompressed image such as the
@@ -1137,6 +1157,8 @@ impl CommentRegistrationValue {
     }
 }
 
+// A.9.2
+//
 // Comment (COM)
 //
 // Allows unstructured data in the main and tile-part header.
@@ -1224,6 +1246,8 @@ impl QuantizationValue {
     }
 }
 
+// A.6.4
+//
 // Quantization default (QCD)
 //
 // Function: Describes the quantization default used for compressing all
@@ -1261,6 +1285,8 @@ impl QuantizationDefaultMarkerSegment {
     }
 }
 
+// A.6.5
+//
 // Quantization component (QCC)
 //
 // Function: Describes the quantization used for compressing a particular
@@ -1451,6 +1477,7 @@ impl ContiguousCodestream {
         Ok(segment)
     }
 
+    // A.6.1 - Coding style default (COD)
     fn decode_cod<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
@@ -2033,6 +2060,7 @@ impl ContiguousCodestream {
         self.offset
     }
 
+    // A.3 - Construction of the main header
     fn decode_main_header<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
@@ -2174,7 +2202,8 @@ impl ContiguousCodestream {
             todo!();
         }
 
-        // no more than one COC per component
+        // A.6.5
+        // No more than one per any given component may be present in either the main or tile-part headers
         if header.quantization_component_segments.len() > (no_components as usize) {
             todo!();
         }
@@ -2182,6 +2211,7 @@ impl ContiguousCodestream {
         Ok(header)
     }
 
+    // A.4 – Construction of the first tile-part header of a given tile
     fn decode_first_tile_header<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
@@ -2291,6 +2321,7 @@ impl ContiguousCodestream {
         let tile_header = self.decode_first_tile_header(reader, no_components)?;
         let mut marker_type: MarkerSymbol = [0; 2];
 
+        // Required as the last marker segment of every tile-part header
         reader.read_exact(&mut marker_type)?;
         if marker_type != MARKER_SYMBOL_SOD {
             return Err(CodestreamError::MarkerUnexpected {
@@ -2318,6 +2349,7 @@ impl ContiguousCodestream {
                             }
                             .into());
                         }
+                        // A.8.1
                         todo!();
                     }
                     MARKER_SYMBOL_EPH => {
@@ -2331,6 +2363,7 @@ impl ContiguousCodestream {
                             }
                             .into());
                         }
+                        // A.8.2
                         todo!();
                     }
                     // delimiting markers
@@ -2339,6 +2372,7 @@ impl ContiguousCodestream {
                         break;
                     }
                     MARKER_SYMBOL_SOT => {
+                        // A.4.4
                         todo!();
                     }
                     _ => {

@@ -184,6 +184,8 @@ pub trait JBox {
     ) -> Result<(), Box<dyn error::Error>>;
 }
 
+// I.5.1
+//
 // JPEG 2000 Signature box
 //
 // The Signature box identifies that the format of this file was defined by the
@@ -257,6 +259,8 @@ impl JBox for SignatureBox {
 
 type CompatibilityList = Vec<[u8; 4]>;
 
+// I.5.2
+//
 // File Type box
 //
 // The File Type box completely defines all of the contents of this file, as
@@ -389,6 +393,8 @@ impl JBox for FileTypeBox {
     }
 }
 
+// I.5.3
+//
 // JP2 Header Box
 //
 // The JP2 Header box contains generic information about the file, such as
@@ -624,6 +630,8 @@ impl JBox for HeaderBox {
 
 const COMPRESSION_TYPE_WAVELET: u8 = 7;
 
+// I.5.3.1
+//
 // Image Header box
 //
 // This box contains fixed length generic information about the image, such as
@@ -825,6 +833,8 @@ impl JBox for ImageHeaderBox {
     }
 }
 
+// I.5.3.6
+//
 // Channel Definition Box
 //
 // The Channel Definition box specifies the meaning of the samples in each
@@ -1084,6 +1094,8 @@ impl ComponentMap {
     }
 }
 
+// I.5.3.5
+//
 // The Component Mapping box defines how image channels are identified from the
 // actual components decoded from the codestream.
 //
@@ -1236,6 +1248,8 @@ impl GeneratedComponent {
     }
 }
 
+// I.5.3.4
+//
 // The palette specified in this box is applied to a single component to
 // convert it into multiple components.
 //
@@ -1333,6 +1347,8 @@ impl JBox for PaletteBox {
     }
 }
 
+// I.5.3.2
+//
 // The Bits Per Component box specifies the bit depth of each component.
 //
 // If the bit depth of all components in the codestream is the same (in both
@@ -1454,6 +1470,8 @@ impl EnumeratedColourSpaces {
     }
 }
 
+// I.5.3.3
+//
 // Colour Specification box
 //
 // Each Colour Specification box defines one method by which an application can
@@ -1624,6 +1642,8 @@ impl JBox for ColourSpecificationBox {
     }
 }
 
+// I.5.3.7
+//
 // Resolution box (superbox)
 //
 // This box specifies the capture and default display grid resolutions of this
@@ -1748,6 +1768,8 @@ impl JBox for ResolutionBox {
     }
 }
 
+// I.6
+//
 // Intellectual Property box
 //
 // A box type for a box which is devoted to carrying intellectual property
@@ -1791,6 +1813,8 @@ impl JBox for IntellectualPropertyBox {
     }
 }
 
+// I.7.1
+//
 // XML box
 //
 // An XML box contains vendor specific information (in XML format) other than
@@ -1835,6 +1859,8 @@ impl JBox for XMLBox {
     }
 }
 
+// I.7.2
+//
 // UUID box
 //
 // A UUID box contains vendor specific information other than the information
@@ -1992,6 +2018,8 @@ impl QuantizationDefaultMarkerSegment {
     }
 }
 
+// I.5.4
+//
 // Contiguous Codestream box
 //
 // The Contiguous Codestream box contains a valid and complete JPEG 2000
@@ -2035,6 +2063,8 @@ impl JBox for ContiguousCodestreamBox {
     }
 }
 
+// I.5.3.7.2
+//
 // Default Display Resolution box
 //
 // This box specifies a desired display grid resolution.
@@ -2133,6 +2163,8 @@ impl JBox for DefaultDisplayResolutionBox {
     }
 }
 
+// I.5.3.7.1
+//
 // This box specifies the grid resolution at which the source was digitized to
 // create the image samples specified by thecodestream.
 //

@@ -2432,6 +2432,19 @@ impl ContiguousCodestream {
 
                     // PPT (Optional)
                     MARKER_SYMBOL_PPT => {
+                        // The packet headers shall be in only one of three places within the codestream. If the PPM
+                        // marker segment is present, all the packet headers shall be found in the main header.
+                        //
+                        // In this case, the PPT marker segment and packets distributed in the bit stream of the
+                        // tile-parts are disallowed.
+                        if self.header.packed_packet_headers.len() > 0 {
+                            return Err(CodestreamError::MarkerUnexpected {
+                                marker: MARKER_SYMBOL_PPT,
+                                offset: reader.stream_position()? - 2,
+                            }
+                            .into());
+                        }
+
                         tile_header.packed_packet_headers = Some(self.decode_ppt(reader)?);
                     }
 
@@ -2508,9 +2521,18 @@ impl ContiguousCodestream {
                         todo!();
                     }
                     MARKER_SYMBOL_EPH => {
-                        // TODO: If packet headers are not in-bit stream
-                        // (i.e., PPM or PPT marker segments are used), this
+                        // If packet headers are not in-bit stream (i.e., PPM or PPT marker segments are used), this
                         // marker shall not be used in the bit stream
+                        if self.header.packed_packet_headers.len() > 0
+                            || tile_header.packed_packet_headers.is_some()
+                        {
+                            return Err(CodestreamError::MarkerUnexpected {
+                                marker: MARKER_SYMBOL_EPH,
+                                offset: reader.stream_position()? - 2,
+                            }
+                            .into());
+                        }
+
                         if coding_styles.contains(&CodingStyleDefault::NoEPH) {
                             return Err(CodestreamError::MarkerUnexpected {
                                 marker: MARKER_SYMBOL_EPH,

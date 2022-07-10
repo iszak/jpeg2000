@@ -12,6 +12,10 @@ mod coder;
 
 #[derive(Debug)]
 enum CodestreamError {
+    MarkerError {
+        marker: MarkerSymbol,
+        error: String,
+    },
     MarkerMissing {
         marker: MarkerSymbol,
     },
@@ -39,6 +43,13 @@ impl error::Error for CodestreamError {}
 impl fmt::Display for CodestreamError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Self::MarkerError { marker, error } => {
+                write!(
+                    f,
+                    "marker 0x{:0>2X?}{:0>2X?} error {:?}",
+                    marker[0], marker[1], error
+                )
+            }
             Self::MarkerMissing { marker } => {
                 write!(f, "missing marker 0x{:0>2X?}{:0>2X?}", marker[0], marker[1])
             }
@@ -2192,20 +2203,46 @@ impl ContiguousCodestream {
             .into());
         }
 
-        // no more than one RGN per component
-        if header.regions.len() > (no_components as usize) {
-            todo!();
+        // A.6.2
+        // No more than one per any given component may be present in either the main or tile-part headers
+        if header.coding_style_component_segment.len() > (no_components as usize) {
+            return Err(CodestreamError::MarkerError {
+                marker: MARKER_SYMBOL_COC,
+                error: format!(
+                    "number of coding style component (COC) {:?} exceeds number of components {:?}",
+                    header.regions.len(),
+                    no_components
+                ),
+            }
+            .into());
         }
 
-        // no more than one QCC per component
-        if header.quantization_component_segments.len() > (no_components as usize) {
-            todo!();
+        // A.6.3 - here may be at most one
+        // There may be at most one RGN marker segment for each component in either the main or tile-part headers
+        if header.regions.len() > (no_components as usize) {
+            return Err(CodestreamError::MarkerError {
+                marker: MARKER_SYMBOL_RGN,
+                error: format!(
+                    "number of region of interest (RGN) {:?} exceeds number of components {:?}",
+                    header.regions.len(),
+                    no_components
+                ),
+            }
+            .into());
         }
 
         // A.6.5
         // No more than one per any given component may be present in either the main or tile-part headers
         if header.quantization_component_segments.len() > (no_components as usize) {
-            todo!();
+            return Err(CodestreamError::MarkerError {
+                marker: MARKER_SYMBOL_QCC,
+                error: format!(
+                    "number of quantization component (QCC) {:?} exceeds number of components {:?}",
+                    header.regions.len(),
+                    no_components
+                ),
+            }
+            .into());
         }
 
         Ok(header)

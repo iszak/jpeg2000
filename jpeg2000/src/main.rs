@@ -16,6 +16,8 @@ use jpxml::{encode_jp2, encode_jpc, Representation};
 
 #[derive(Debug)]
 enum JP2000Error {
+    DecodingContainer { error: String },
+    DecodingCodestream { error: String },
     UnsupportedExtension { extension: String },
 }
 
@@ -23,6 +25,12 @@ impl error::Error for JP2000Error {}
 impl fmt::Display for JP2000Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Self::DecodingContainer { error } => {
+                write!(f, "error decoding jp2 container {}", error.to_string())
+            }
+            Self::DecodingCodestream { error } => {
+                write!(f, "error decoding jpc codestream {}", error.to_string())
+            }
             Self::UnsupportedExtension { extension } => {
                 write!(f, "unsupported extension {}", extension)
             }
@@ -88,15 +96,39 @@ fn run() -> Result<(), Box<dyn Error>> {
                 "jp2" => {
                     let mut reader = BufReader::new(file);
 
-                    let jp2 = decode_jp2(&mut reader)?;
+                    let jp2 = match decode_jp2(&mut reader) {
+                        Ok(jp2) => jp2,
+                        Err(error) => {
+                            return Err(JP2000Error::DecodingContainer {
+                                error: error.to_string(),
+                            }
+                            .into())
+                        }
+                    };
                     for contiguous_codestreams_box in jp2.contiguous_codestreams_boxes() {
                         reader.seek(io::SeekFrom::Start(contiguous_codestreams_box.offset))?;
-                        decode_jpc(&mut reader)?;
+                        match decode_jpc(&mut reader) {
+                            Err(error) => {
+                                return Err(JP2000Error::DecodingCodestream {
+                                    error: error.to_string(),
+                                }
+                                .into())
+                            }
+                            Ok(_) => {}
+                        };
                     }
                 }
                 "jpc" | "j2c" => {
                     let mut reader = BufReader::new(file);
-                    decode_jpc(&mut reader)?;
+                    match decode_jpc(&mut reader) {
+                        Err(error) => {
+                            return Err(JP2000Error::DecodingCodestream {
+                                error: error.to_string(),
+                            }
+                            .into())
+                        }
+                        Ok(_) => {}
+                    };
                 }
                 _ => {
                     return Err(JP2000Error::UnsupportedExtension {

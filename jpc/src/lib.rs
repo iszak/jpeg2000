@@ -895,6 +895,81 @@ pub struct TilePacketLength {
     packet_length: Vec<u8>,
 }
 
+// A.7.4
+//
+// Packed packet headers, main header (PPM)
+//
+// Function: A collection of the packet headers from all tiles.
+#[derive(Debug, Default)]
+pub struct PackedPacketHeaderSegment {
+    offset: u64,
+
+    // Lppm: Length of marker segment in bytes, not including the marker.
+    length: u16,
+
+    // Zppm: Index of this marker segment relative to all other PPM marker
+    // segments present in the main header.
+    index: [u8; 1],
+
+    // Nppm^i: Number of bytes of Ippm information for the ith tile-part in the
+    // order found in the codestream. One value for each tile-part (not tile).
+    number_of_bytes: [u8; 4],
+
+    // Ippm^ij: Packet header for every packet in order in the tile-part.
+    // The contents are exactly the packet header which would have been
+    // distributed in the bit stream as described in B.10
+    data: Vec<u8>,
+}
+
+impl PackedPacketHeaderSegment {
+    pub fn index(&self) -> usize {
+        u8::from_be_bytes(self.index) as usize
+    }
+
+    pub fn number_of_bytes(&self) -> usize {
+        u32::from_be_bytes(self.number_of_bytes) as usize
+    }
+}
+
+// A.7.5
+//
+// Packed packet headers, tile-part header (PPT)
+//
+// Function: A collection of the packet headers from one tile or tile-part.
+#[derive(Debug, Default)]
+pub struct TilePackedPacketHeaderSegment {
+    offset: u64,
+
+    // Lppt: Length of marker segment in bytes, not including the marker.
+    length: u16,
+
+    // Zppt: Index of this marker segment relative to all other PPT marker
+    // segments present in the current header.
+    //
+    // The sequence of (Ippti) parameters from this marker segment is
+    // concatenated, in the order of increasing Zppt, with the sequences of
+    // parameters from other marker segments. Every marker segment in this
+    // series shall end with a completed packet header.
+    index: [u8; 1],
+
+    // Ippt^i: Packet header for every packet in order in the tile-part.
+    //
+    // The component index, layer, and resolution level are determined from the
+    // method of progression or POC marker segments.
+    //
+    // The contents are exactly the packet header which would have been
+    // distributed in the bit stream as described in B.10.
+    data: Vec<u8>,
+}
+
+impl TilePackedPacketHeaderSegment {
+    pub fn index(&self) -> usize {
+        u8::from_be_bytes(self.index) as usize
+    }
+}
+
+// A.9.1
+//
 // Component registration (CRG)
 //
 // Function: Allows specific registration of components with respect to each
@@ -1649,6 +1724,54 @@ impl ContiguousCodestream {
         Ok(segment)
     }
 
+    fn decode_ppm<R: io::Read + io::Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> Result<PackedPacketHeaderSegment, Box<dyn error::Error>> {
+        info!("PPM start at byte offset {}", reader.stream_position()? - 2);
+        let offset = reader.stream_position()?;
+        let length = self.decode_length(reader)?;
+        let mut segment = PackedPacketHeaderSegment {
+            offset,
+            length,
+            index: [0],
+            number_of_bytes: [0; 4],
+            // TODO: It is possible that the next PPM marker segment will not
+            // have an Nppm parameter after Zppm, but the continuation of the
+            // Ippm series from the last PPM marker segment.
+            data: vec![0; (length as usize) - 7],
+        };
+
+        reader.read_exact(&mut segment.index)?;
+        reader.read_exact(&mut segment.number_of_bytes)?;
+        reader.read_exact(&mut segment.data)?;
+        info!("PPM end at byte offset {}", reader.stream_position()?);
+
+        Ok(segment)
+    }
+
+    fn decode_ppt<R: io::Read + io::Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> Result<TilePackedPacketHeaderSegment, Box<dyn error::Error>> {
+        info!("PPT start at byte offset {}", reader.stream_position()? - 2);
+        let offset = reader.stream_position()?;
+        let length = self.decode_length(reader)?;
+        let mut segment = TilePackedPacketHeaderSegment {
+            offset,
+            length,
+            index: [0],
+            data: vec![0; (length as usize) - 3],
+        };
+
+        reader.read_exact(&mut segment.index)?;
+        reader.read_exact(&mut segment.data)?;
+
+        info!("PPT end at byte offset {}", reader.stream_position()?);
+
+        Ok(segment)
+    }
+
     fn decode_tlm<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
@@ -1961,7 +2084,7 @@ pub struct Header {
     progression_order_change: ProgressionOrderChangeSegment,
 
     // PPM (Optional)
-    // TODO
+    packed_packet_headers: Vec<PackedPacketHeaderSegment>,
 
     // TLM (Optional)
     tile_part_lengths: TilePartLengthsSegment,
@@ -2053,7 +2176,7 @@ struct TileHeader {
     progression_order_change: ProgressionOrderChangeSegment,
 
     // PPT (Optional)
-    // TODO
+    packed_packet_headers: Option<TilePackedPacketHeaderSegment>,
 
     // PLT (Optional)
     packet_lengths: Vec<PacketLengthSegment>,
@@ -2143,12 +2266,9 @@ impl ContiguousCodestream {
 
                     // PPM (Optional, either PPM or PPT or codestream packet headers required)
                     MARKER_SYMBOL_PPM => {
-                        todo!();
-                    }
-
-                    // PPT (Optional)
-                    MARKER_SYMBOL_PPT => {
-                        todo!();
+                        // TODO: If the PPM marker segment is present, all the packet headers shall be found in the
+                        // main header.
+                        header.packed_packet_headers.push(self.decode_ppm(reader)?);
                     }
 
                     // TLM (Optional)
@@ -2312,9 +2432,7 @@ impl ContiguousCodestream {
 
                     // PPT (Optional)
                     MARKER_SYMBOL_PPT => {
-                        // TODO: If the PPM marker segment is present, all the packet
-                        // headers shall be found in the main header.
-                        todo!()
+                        tile_header.packed_packet_headers = Some(self.decode_ppt(reader)?);
                     }
 
                     // PLT (Optional)

@@ -8,33 +8,14 @@ use std::str;
 
 #[derive(Debug)]
 pub enum JP2Error {
-    InvalidSignature {
-        signature: [u8; 4],
-        offset: u64,
-    },
-    InvalidBrand {
-        brand: [u8; 4],
-        offset: u64,
-    },
+    InvalidSignature { signature: [u8; 4], offset: u64 },
+    InvalidBrand { brand: [u8; 4], offset: u64 },
     Unsupported,
-    NotCompatible {
-        compatibility_list: CompatibilityList,
-    },
-    BoxUnexpected {
-        box_type: BoxType,
-        offset: u64,
-    },
-    BoxDuplicate {
-        box_type: BoxType,
-        offset: u64,
-    },
-    BoxMalformed {
-        box_type: BoxType,
-        offset: u64,
-    },
-    BoxMissing {
-        box_type: BoxType,
-    },
+    NotCompatible { compatibility_list: Vec<String> },
+    BoxUnexpected { box_type: BoxType, offset: u64 },
+    BoxDuplicate { box_type: BoxType, offset: u64 },
+    BoxMalformed { box_type: BoxType, offset: u64 },
+    BoxMissing { box_type: BoxType },
 }
 
 impl error::Error for JP2Error {}
@@ -60,8 +41,8 @@ impl fmt::Display for JP2Error {
             Self::NotCompatible { compatibility_list } => {
                 write!(
                     f,
-                    "'jp2\\040' not found in compatibility list {:?}",
-                    compatibility_list
+                    "'jp2 ' not found in compatibility list '{}'",
+                    compatibility_list.join(", ")
                 )
             }
             Self::BoxDuplicate { box_type, offset } => {
@@ -343,10 +324,10 @@ impl FileTypeBox {
     // standard, to which the file conforms.
     //
     // This field is encoded as a four byte string of ISO 646 characters.
-    pub fn compatibility_list(&self) -> Vec<&str> {
+    pub fn compatibility_list(&self) -> Vec<String> {
         self.compatibility_list
             .iter()
-            .map(|c| str::from_utf8(c).unwrap())
+            .map(|c| str::from_utf8(c).unwrap().to_owned())
             .collect()
     }
 }
@@ -401,7 +382,7 @@ impl JBox for FileTypeBox {
             .is_none()
         {
             return Err(JP2Error::NotCompatible {
-                compatibility_list: self.compatibility_list.clone(),
+                compatibility_list: self.compatibility_list().clone(),
             }
             .into());
         }

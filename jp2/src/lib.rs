@@ -295,7 +295,7 @@ impl FileTypeBox {
     // a different value for the Brand field.
     //
     // If the value of the Brand field is not ‘jp2\040’, then a value of
-    // ‘jp2\040’ in the Compatibility listindicates that a JP2 reader can
+    // ‘jp2\040’ in the Compatibility list indicates that a JP2 reader can
     // interpret the file in some manner as intended by the creator of the
     // file.
     pub fn brand(&self) -> &str {
@@ -305,7 +305,7 @@ impl FileTypeBox {
     // Minor version
     //
     // This parameter defines the minor version number of this JP2 specification
-    // for which thefile complies.
+    // for which the file complies.
     //
     // The parameter is defined as a 4-byte big endian unsigned integer.
     //
@@ -692,7 +692,7 @@ const COMPRESSION_TYPE_WAVELET: u8 = 7;
 //
 // Files that contain contradictory information between the Image Headerbox and
 // the first codestream are not conforming files. However, readers may choose
-// to attempt to read these files by usingthe values found within the
+// to attempt to read these files by using the values found within the
 // codestream.
 #[derive(Debug, Default)]
 pub struct ImageHeaderBox {
@@ -733,7 +733,7 @@ impl ImageHeaderBox {
     // The value of this field shall be Xsiz – XOsiz, where Xsiz and XOsiz are
     // the values of the respective fields in the SIZ marker in the codestream.
     //
-    // However, reference grid points are not necessarily square; theaspect
+    // However, reference grid points are not necessarily square; the aspect
     // ratio of a reference grid point is specified by the Resolution box.
     //
     // If the Resolution box is not present, then a reader shall assume that
@@ -1299,7 +1299,7 @@ impl GeneratedComponent {
 // Header box in the file.
 //
 // The mapping of an actual component from the codestream through the palette
-// is specified inthe Component Mapping box.
+// is specified in the Component Mapping box.
 //
 // If the JP2 Header box contains a Palette box, then it shall also contain a
 // Component Mapping box.
@@ -2419,7 +2419,7 @@ impl JBox for DefaultDisplayResolutionBox {
 // I.5.3.7.1
 //
 // This box specifies the grid resolution at which the source was digitized to
-// create the image samples specified by thecodestream.
+// create the image samples specified by the codestream.
 //
 // For example, this may specify the resolution of the flatbed scanner that
 // captured a page from a book. The capture grid resolution could also specify
@@ -2638,7 +2638,7 @@ fn decode_box_header<R: io::Read + io::Seek>(
 
         let mut xl_length: [u8; 8] = [0; 8];
         // This field specifies the actual length of the box if the value of the LBox field is 1.
-        // This field is stored as an 8-byte big endian unsigned integer. The value includes all of the fields of thebox, including the LBox, TBox and XLBox fields
+        // This field is stored as an 8-byte big endian unsigned integer. The value includes all of the fields of the box, including the LBox, TBox and XLBox fields
         reader.read_exact(&mut xl_length)?;
 
         box_length_value = u64::from_be_bytes(xl_length) - 16;

@@ -431,7 +431,7 @@ pub struct StartOfTileSegment {
     //
     // Two values are allowed: the correct number of tile-parts for that tile
     // and zero. A zero value indicates that the number of tile-parts of this
-    // tile is not specified inthis tile-part.
+    // tile is not specified in this tile-part.
     no_tile_parts: [u8; 1],
 }
 
@@ -440,7 +440,7 @@ pub struct StartOfTileSegment {
 // Coding style default (COD)
 //
 // Function: Describes the coding style, number of decomposition levels,
-// and layering that is the default used forcompressing all components of
+// and layering that is the default used for compressing all components of
 // an image (if in the main header) or a tile (if in the tile-part header).
 //
 // The parameter values can be overridden for an individual component by a
@@ -1226,7 +1226,7 @@ enum CommentRegistrationValue {
     // General use (binary values)
     Binary,
 
-    // General use (IS 8859-15:1999 (Latin) values)
+    // General use (ISO 8859-15:1999 (Latin) values)
     Latin,
 
     // All other values reserved
@@ -2114,7 +2114,7 @@ impl Header {
     }
 }
 
-// Many images have multiple components. This specification has a multiple component transformation to decorrelate threecomponents. This is the only function in this specification that relates components to each othe
+// Many images have multiple components. This specification has a multiple component transformation to decorrelate threecomponents. This is the only function in this specification that relates components to each other
 struct Image {}
 
 // The image components may be divided into tiles.

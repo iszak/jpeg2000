@@ -1125,7 +1125,7 @@ impl ImageAndTileSizeMarkerSegment {
     }
 
     pub fn precision(&self, i: usize) -> Result<i16, Box<dyn error::Error>> {
-        let precision = self.horizontal_separation.get(i).unwrap();
+        let precision = self.precision.get(i).unwrap();
 
         // If the component sample values are signed, then the range of
         // component sample values is

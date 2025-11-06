@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufReader, path::Path};
 
-use jpc::{decode_jpc};
+use jpc::{CommentRegistrationValue, decode_jpc};
 
 #[test]
 fn test_blue() {
@@ -41,4 +41,11 @@ fn test_blue() {
     assert_eq!(siz.vertical_separation(0).unwrap(), 1);
     assert_eq!(siz.vertical_separation(1).unwrap(), 1);
     assert_eq!(siz.vertical_separation(2).unwrap(), 1);
+
+    assert!(header.comment_marker_segment().is_some());
+    let com = header.comment_marker_segment().as_ref().unwrap();
+    assert_eq!(com.registration_value(), CommentRegistrationValue::Binary);
+    assert!(com.comment_utf8().is_ok());
+    assert_eq!(com.comment_utf8().unwrap(), "Created by OpenJPEG version 2.5.0");
+
 }

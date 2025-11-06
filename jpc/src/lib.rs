@@ -1221,8 +1221,8 @@ impl ImageAndTileSizeMarkerSegment {
     }
 }
 
-#[derive(Debug)]
-enum CommentRegistrationValue {
+#[derive(Debug, PartialEq)]
+pub enum CommentRegistrationValue {
     // General use (binary values)
     Binary,
 
@@ -1258,11 +1258,11 @@ pub struct CommentMarkerSegment {
 }
 
 impl CommentMarkerSegment {
-    fn registration_value(&self) -> CommentRegistrationValue {
+    pub fn registration_value(&self) -> CommentRegistrationValue {
         CommentRegistrationValue::new(self.registration_value)
     }
 
-    fn comment_utf8(&self) -> Result<&str, str::Utf8Error> {
+    pub fn comment_utf8(&self) -> Result<&str, str::Utf8Error> {
         str::from_utf8(&self.comment)
     }
 }

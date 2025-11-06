@@ -32,9 +32,12 @@ fn test_blue() {
     assert_eq!(siz.reference_tile_width(), 128);
     assert_eq!(siz.reference_tile_height(), 64);
     assert_eq!(siz.no_components(), 3);
-    assert_eq!(siz.precision(0).unwrap(), 7);
-    assert_eq!(siz.precision(1).unwrap(), 7);
-    assert_eq!(siz.precision(2).unwrap(), 7);
+    assert_eq!(siz.precision(0).unwrap(), 8);
+    assert_eq!(siz.values_are_signed(0).unwrap(), false);
+    assert_eq!(siz.precision(1).unwrap(), 8);
+    assert_eq!(siz.values_are_signed(1).unwrap(), false);
+    assert_eq!(siz.precision(2).unwrap(), 8);
+    assert_eq!(siz.values_are_signed(2).unwrap(), false);
     assert_eq!(siz.horizontal_separation(0).unwrap(), 1);
     assert_eq!(siz.horizontal_separation(1).unwrap(), 1);
     assert_eq!(siz.horizontal_separation(2).unwrap(), 1);

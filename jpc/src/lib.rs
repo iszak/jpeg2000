@@ -1125,19 +1125,18 @@ impl ImageAndTileSizeMarkerSegment {
     }
 
     pub fn precision(&self, i: usize) -> Result<i16, Box<dyn error::Error>> {
-        let precision = self.precision.get(i).unwrap();
-
-        // If the component sample values are signed, then the range of
-        // component sample values is
-        // -2^(Ssiz AND 0x7F)-1 ≤ component sample value ≤ 2^(Ssiz AND 0x7F)-1 - 1.
-        // TODO: Verify
-        let signedness = precision[0] >> 7;
-        Ok(match signedness {
-            0 => u8::from_be_bytes(*precision) as i16,
-            1 => i8::from_be_bytes(*precision) as i16,
-            _ => precision[0] as i16,
-        })
+        let ssiz = self.precision.get(i).unwrap();
+        let precision = (u8::from_be_bytes(*ssiz) & 0x7f) as i16;
+        // ISO/IEC 15444-1:2019 Table A.11, component bit depth is value + 1.
+        Ok(precision + 1)
     }
+
+    pub fn values_are_signed(&self, i: usize) -> Result<bool, Box<dyn error::Error>> {
+        let ssiz = self.precision.get(i).unwrap();
+        let is_signed = (u8::from_be_bytes(*ssiz) & 0x80) == 0x80;
+        Ok(is_signed)
+    }
+
     pub fn horizontal_separation(&self, i: usize) -> Result<u8, Box<dyn error::Error>> {
         let horizontal_separation = self.horizontal_separation.get(i).unwrap();
         Ok(u8::from_be_bytes(*horizontal_separation))

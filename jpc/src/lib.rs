@@ -216,37 +216,37 @@ impl CodingBlockStyle {
     fn new(value: u8) -> Vec<CodingBlockStyle> {
         let mut coding_block_styles: Vec<CodingBlockStyle> = vec![];
 
-        if value & 0b_0000_0001 == 1 {
+        if value & 0b_0000_0001 != 0 {
             coding_block_styles.push(CodingBlockStyle::SelectiveArithmeticCodingBypass);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoSelectiveArithmeticCodingBypass);
         }
 
-        if value & 0b_0000_0010 == 1 {
+        if value & 0b_0000_0010 !=0  {
             coding_block_styles.push(CodingBlockStyle::ResetContextProbabilities);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoResetOfContextProbabilities);
         }
 
-        if value & 0b_0000_0100 == 1 {
+        if value & 0b_0000_0100 != 0 {
             coding_block_styles.push(CodingBlockStyle::TerminationOnEachCodingPass);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoTerminationOnEachCodingPass);
         }
 
-        if value & 0b_0000_1000 == 1 {
+        if value & 0b_0000_1000 != 0 {
             coding_block_styles.push(CodingBlockStyle::VerticallyCausalContext);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoVerticallyCausalContext);
         }
 
-        if value & 0b_0001_0000 == 1 {
+        if value & 0b_0001_0000 != 0 {
             coding_block_styles.push(CodingBlockStyle::PredictableTermination);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoPredictableTermination);
         }
 
-        if value & 0b_0010_0000 == 1 {
+        if value & 0b_0010_0000 != 0 {
             coding_block_styles.push(CodingBlockStyle::SegmentationSymbolsAreUsed);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoSegmentationSymbolsAreUsed);
@@ -803,7 +803,7 @@ impl TilePartParameterSize {
             _ => {} // TODO: Add reserve values by removed known bits
         }
 
-        return tile_part_parameter_sizes;
+        tile_part_parameter_sizes
     }
 }
 
@@ -1446,7 +1446,7 @@ impl ContiguousCodestream {
     ) -> Result<u16, Box<dyn error::Error>> {
         let mut length: [u8; 2] = [0; 2];
         reader.read_exact(&mut length)?;
-        return Ok(u16::from_be_bytes(length));
+        Ok(u16::from_be_bytes(length))
     }
 
     fn decode_siz<R: io::Read + io::Seek>(
@@ -1623,12 +1623,12 @@ impl ContiguousCodestream {
         if no_components < 257 {
             let mut buffer: [u8; 1] = [0; 1];
             reader.read_exact(&mut buffer)?;
-            return Ok([0, buffer[0]]);
+            Ok([0, buffer[0]])
         } else {
             // TODO: Understand why 2 MSB are unused (signness is only 1 bit)
             let mut buffer: [u8; 2] = [0; 2];
             reader.read_exact(&mut buffer)?;
-            return Ok(buffer);
+            Ok(buffer)
         }
     }
 
@@ -1803,16 +1803,16 @@ impl ContiguousCodestream {
 
             // Ttlm
             if parameter_sizes.contains(&TilePartParameterSize::Ttlm8Bit) {
-                reader.take(1).read(&mut tile_part_length.tile_index)?;
+                reader.take(1).read_exact(&mut tile_part_length.tile_index)?;
             } else if parameter_sizes.contains(&TilePartParameterSize::Ttlm16Bit) {
-                reader.take(2).read(&mut tile_part_length.tile_index)?;
+                reader.take(2).read_exact(&mut tile_part_length.tile_index)?;
             }
 
             // Ptlm
             if parameter_sizes.contains(&TilePartParameterSize::Ptlm16Bit) {
-                reader.take(2).read(&mut tile_part_length.tile_length)?;
+                reader.take(2).read_exact(&mut tile_part_length.tile_length)?;
             } else if parameter_sizes.contains(&TilePartParameterSize::Ptlm32Bit) {
-                reader.take(4).read(&mut tile_part_length.tile_length)?;
+                reader.take(4).read_exact(&mut tile_part_length.tile_length)?;
             }
             segment.tile_part_lengths.push(tile_part_length);
         }
@@ -2103,10 +2103,10 @@ impl Header {
         &self.image_and_tile_size_marker_segment
     }
     pub fn coding_style_marker_segment(&self) -> &CodingStyleMarkerSegment {
-        &self.coding_style_marker_segment.as_ref().unwrap()
+        self.coding_style_marker_segment.as_ref().unwrap()
     }
     pub fn quantization_default_marker_segment(&self) -> &QuantizationDefaultMarkerSegment {
-        &self.quantization_default_marker_segment.as_ref().unwrap()
+        self.quantization_default_marker_segment.as_ref().unwrap()
     }
     pub fn comment_marker_segment(&self) -> &Option<CommentMarkerSegment> {
         &self.comment_marker_segment
@@ -2436,7 +2436,7 @@ impl ContiguousCodestream {
                         //
                         // In this case, the PPT marker segment and packets distributed in the bit stream of the
                         // tile-parts are disallowed.
-                        if self.header.packed_packet_headers.len() > 0 {
+                        if !self.header.packed_packet_headers.is_empty() {
                             return Err(CodestreamError::MarkerUnexpected {
                                 marker: MARKER_SYMBOL_PPT,
                                 offset: reader.stream_position()? - 2,
@@ -2522,7 +2522,7 @@ impl ContiguousCodestream {
                     MARKER_SYMBOL_EPH => {
                         // If packet headers are not in-bit stream (i.e., PPM or PPT marker segments are used), this
                         // marker shall not be used in the bit stream
-                        if self.header.packed_packet_headers.len() > 0
+                        if !self.header.packed_packet_headers.is_empty()
                             || tile_header.packed_packet_headers.is_some()
                         {
                             return Err(CodestreamError::MarkerUnexpected {

@@ -375,11 +375,7 @@ impl JBox for FileTypeBox {
 
         // A file shall have at least one CL field in the File Type box, and shall contain the value‘jp2\040’ in one of the CL fields in the File Type box, and all conforming readers shall properly interpret all files with ‘jp2\040’ in one of the CL fields.
         // Other values of the Compatibility list field are reserved for ISO use.
-        if self
-            .compatibility_list
-            .iter()
-            .find(|c| **c == BRAND_JP2)
-            .is_none()
+        if !self.compatibility_list.contains(&BRAND_JP2)
         {
             return Err(JP2Error::NotCompatible {
                 compatibility_list: self.compatibility_list().clone(),
@@ -654,7 +650,7 @@ impl JBox for HeaderSuperBox {
 
         // There shall be at least one Colour Specification box
         // within the JP2 Header box.
-        if self.colour_specification_boxes.len() == 0 {
+        if self.colour_specification_boxes.is_empty() {
             return Err(JP2Error::BoxMalformed {
                 box_type: BOX_TYPE_IMAGE_HEADER,
                 offset: reader.stream_position()?,
@@ -959,7 +955,7 @@ impl Channel {
     }
 
     pub fn channel_type_u16(&self) -> u16 {
-        return u16::from_be_bytes(self.channel_type);
+        u16::from_be_bytes(self.channel_type)
     }
 
     // TODO: Map channel association based on colourspace (Table I-18)
@@ -1205,7 +1201,7 @@ impl JBox for ComponentMappingBox {
             reader.read_exact(&mut component_map.palette)?;
 
             self.mapping.push(component_map);
-            index = index + 4;
+            index += 4;
         }
 
         Ok(())
@@ -1380,7 +1376,7 @@ impl JBox for PaletteBox {
                 let mut entry: [u8; 1] = [0; 1];
                 reader.read_exact(&mut entry)?;
                 generated_component.values.push(entry[0]);
-                j = j + 1;
+                j += 1;
             }
         }
 
@@ -2375,14 +2371,14 @@ impl DefaultDisplayResolutionBox {
     pub fn vertical_display_grid_resolution(&self) -> u64 {
         self.vertical_display_grid_resolution_numerator() as u64
             / self.vertical_display_grid_resolution_denominator() as u64
-            * (10 as u64).pow(self.vertical_display_grid_resolution_exponent() as u32)
+            * (10_u64).pow(self.vertical_display_grid_resolution_exponent() as u32)
     }
 
     // HRd = HRdN/HRdD * 10^HRdE
     pub fn horizontal_display_grid_resolution(&self) -> u64 {
         self.horizontal_display_grid_resolution_numerator() as u64
             / self.horizontal_display_grid_resolution_denominator() as u64
-            * (10 as u64).pow(self.horizontal_display_grid_resolution_exponent() as u32)
+            * (10_u64).pow(self.horizontal_display_grid_resolution_exponent() as u32)
     }
 }
 
@@ -2650,7 +2646,7 @@ fn decode_box_header<R: io::Read + io::Seek>(
         reader.read_exact(&mut box_type)?;
 
         // Subtract LBox and TBox from length
-        box_length_value = box_length_value - 8;
+        box_length_value -= 8;
     }
 
     Ok(BoxHeader {
@@ -2795,8 +2791,8 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 info!("UUIDInfoBox start at {:?}", uuid_info_box.offset);
                 uuid_info_box.decode(reader)?;
 
-                if current_uuid_info_box.is_some() {
-                    uuid_info_boxes.push(current_uuid_info_box.unwrap());
+                if let Some(info_box) = current_uuid_info_box {
+                    uuid_info_boxes.push(info_box);
                 }
                 current_uuid_info_box = Some(uuid_info_box);
                 info!("UUIDInfoBox finish at {:?}", reader.stream_position()?);
@@ -2882,8 +2878,8 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
         }
     }
 
-    if current_uuid_info_box.is_some() {
-        uuid_info_boxes.push(current_uuid_info_box.unwrap());
+    if let Some(uuid_box) = current_uuid_info_box {
+        uuid_info_boxes.push(uuid_box);
     }
 
     let result = JP2File {

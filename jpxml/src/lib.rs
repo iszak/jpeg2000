@@ -25,7 +25,7 @@ where
     for byte in iter {
         write!(hex, "{:02x}", byte)?;
     }
-    return Ok(hex);
+    Ok(hex)
 }
 
 #[derive(Debug)]
@@ -114,15 +114,15 @@ fn encode_signature_box<W: io::Write>(
     writer: &mut W,
     signature_box: &SignatureBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:jP__ type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:jP__ type=\"box\" length=\"{}\" offset=\"{}\">",
         signature_box.length(),
         signature_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:signature length=\"8\" type=\"hexbyte\">{}</xjp:signature>\n",
+        "    <xjp:signature length=\"8\" type=\"hexbyte\">{}</xjp:signature>",
         to_hex(signature_box.signature().iter())?
     )?;
     writer.write(b"  </xjp:jP__>\n")?;
@@ -133,27 +133,27 @@ fn encode_file_type_box<W: io::Write>(
     writer: &mut W,
     file_type_box: &FileTypeBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:ftyp type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:ftyp type=\"box\" length=\"{}\" offset=\"{}\">",
         file_type_box.length(),
         file_type_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:brand length=\"4\" type=\"fourcc\">{}</xjp:brand>\n",
+        "    <xjp:brand length=\"4\" type=\"fourcc\">{}</xjp:brand>",
         file_type_box.brand()
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:version length=\"4\" type=\"integer\">{}</xjp:version>\n",
+        "    <xjp:version length=\"4\" type=\"integer\">{}</xjp:version>",
         file_type_box.min_version()
     )?;
 
     for compatibility in file_type_box.compatibility_list() {
-        write!(
+        writeln!(
             writer,
-            "    <xjp:compatibility length=\"4\" type=\"fourcc\">{}</xjp:compatibility>\n",
+            "    <xjp:compatibility length=\"4\" type=\"fourcc\">{}</xjp:compatibility>",
             compatibility
         )?;
     }
@@ -167,51 +167,51 @@ fn encode_header_super_box<W: io::Write>(
 ) -> Result<(), Box<dyn error::Error>> {
     let image_header_box = &header_super_box.image_header_box;
 
-    write!(
+    writeln!(
         writer,
-        "  <xjp:jp2h type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:jp2h type=\"box\" length=\"{}\" offset=\"{}\">",
         header_super_box.length(),
         header_super_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:ihdr type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:ihdr type=\"box\" length=\"{}\" offset=\"{}\">",
         image_header_box.length(),
         image_header_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:height type=\"integer\" length=\"4\">{}</xjp:height>\n",
+        "      <xjp:height type=\"integer\" length=\"4\">{}</xjp:height>",
         image_header_box.height()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:width type=\"integer\" length=\"4\">{}</xjp:width>\n",
+        "      <xjp:width type=\"integer\" length=\"4\">{}</xjp:width>",
         image_header_box.width()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:num_components type=\"integer\" length=\"1\">{}</xjp:num_components>\n",
+        "      <xjp:num_components type=\"integer\" length=\"1\">{}</xjp:num_components>",
         image_header_box.components_num()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:depth type=\"integer\" length=\"2\">{}</xjp:depth>\n",
+        "      <xjp:depth type=\"integer\" length=\"2\">{}</xjp:depth>",
         image_header_box.components_bits()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:compression type=\"integer\" length=\"1\">{}</xjp:compression>\n",
+        "      <xjp:compression type=\"integer\" length=\"1\">{}</xjp:compression>",
         image_header_box.compression_type()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:colour_unknown type=\"integer\" length=\"1\">{}</xjp:colour_unknown>\n",
+        "      <xjp:colour_unknown type=\"integer\" length=\"1\">{}</xjp:colour_unknown>",
         image_header_box.colourspace_unknown()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:ipr type=\"integer\" length=\"1\">{}</xjp:ipr>\n",
+        "      <xjp:ipr type=\"integer\" length=\"1\">{}</xjp:ipr>",
         image_header_box.intellectual_property()
     )?;
     writer.write(b"    </xjp:ihdr>\n")?;
@@ -245,22 +245,22 @@ fn encode_bits_per_component_box<W: io::Write>(
     writer: &mut W,
     bits_per_component_box: &BitsPerComponentBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:bpcc type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:bpcc type=\"box\" length=\"{}\" offset=\"{}\">",
         bits_per_component_box.length(),
         bits_per_component_box.offset(),
     )?;
 
     for component_bit_depth in bits_per_component_box.bits_per_component() {
-        write!(
+        writeln!(
             writer,
-            "    <xjp:depth length=\"1\" type=\"integer\">{}</xjp:depth>\n",
+            "    <xjp:depth length=\"1\" type=\"integer\">{}</xjp:depth>",
             component_bit_depth.value()
         )?;
     }
 
-    write!(writer, "    </xjp:ihdr>\n")?;
+    writeln!(writer, "    </xjp:ihdr>")?;
     Ok(())
 }
 
@@ -268,31 +268,31 @@ fn encode_colour_specification_box<W: io::Write>(
     writer: &mut W,
     colour_specification_box: &ColourSpecificationBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:colr type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:colr type=\"box\" length=\"{}\" offset=\"{}\">",
         colour_specification_box.length(),
         colour_specification_box.offset(),
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:method length=\"1\" type=\"integer\">{}</xjp:method>\n",
+        "      <xjp:method length=\"1\" type=\"integer\">{}</xjp:method>",
         colour_specification_box.method()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:precedence length=\"1\" type=\"integer\">{}</xjp:precedence>\n",
+        "      <xjp:precedence length=\"1\" type=\"integer\">{}</xjp:precedence>",
         colour_specification_box.precedence()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:approx length=\"1\" type=\"integer\">{}</xjp:approx>\n",
+        "      <xjp:approx length=\"1\" type=\"integer\">{}</xjp:approx>",
         colour_specification_box.colourspace_approximation()
     )?;
     if let Some(enumerated_colour_space) = colour_specification_box.enumerated_colour_space() {
-        write!(
+        writeln!(
             writer,
-            "      <xjp:colour length=\"4\" type=\"integer\">{}</xjp:colour>\n",
+            "      <xjp:colour length=\"4\" type=\"integer\">{}</xjp:colour>",
             enumerated_colour_space
         )?;
     }
@@ -304,32 +304,32 @@ fn encode_palette_box<W: io::Write>(
     writer: &mut W,
     palette_box: &PaletteBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:pclr type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:pclr type=\"box\" length=\"{}\" offset=\"{}\">",
         palette_box.length(),
         palette_box.offset(),
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:num_entries length=\"2\" type=\"integer\">{}</xjp:num_entries>\n",
+        "      <xjp:num_entries length=\"2\" type=\"integer\">{}</xjp:num_entries>",
         palette_box.num_entries()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:num_components length=\"1\" type=\"integer\">{}</xjp:num_components>\n",
+        "      <xjp:num_components length=\"1\" type=\"integer\">{}</xjp:num_components>",
         palette_box.num_components()
     )?;
 
     for generated_component in palette_box.generated_components() {
-        write!(
+        writeln!(
             writer,
-            "      <xjp:depth length=\"1\" type=\"integer\">{}</xjp:depth>\n",
+            "      <xjp:depth length=\"1\" type=\"integer\">{}</xjp:depth>",
             generated_component.bit_depth().value()
         )?;
-        write!(
+        writeln!(
             writer,
-            "      <xjp:data length=\"1\" type=\"integer\">{}</xjp:data>\n",
+            "      <xjp:data length=\"1\" type=\"integer\">{}</xjp:data>",
             to_hex(generated_component.values().iter())?
         )?;
     }
@@ -341,32 +341,32 @@ fn encode_component_mapping_box<W: io::Write>(
     writer: &mut W,
     component_mapping_box: &ComponentMappingBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:cmap type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:cmap type=\"box\" length=\"{}\" offset=\"{}\">",
         component_mapping_box.length(),
         component_mapping_box.offset(),
     )?;
 
     for component_map in component_mapping_box.component_map() {
         // TODO: Verify schema
-        write!(writer, "      <xjp:mapc type=\"xjp:mapc\">\n")?;
-        write!(
+        writeln!(writer, "      <xjp:mapc type=\"xjp:mapc\">")?;
+        writeln!(
             writer,
-            "        <xjp:component length=\"2\" type=\"integer\">{}</xjp:component>\n",
+            "        <xjp:component length=\"2\" type=\"integer\">{}</xjp:component>",
             component_map.component()
         )?;
-        write!(
+        writeln!(
             writer,
-            "        <xjp:mtype length=\"1\" type=\"integer\">{}</xjp:mtype>\n",
+            "        <xjp:mtype length=\"1\" type=\"integer\">{}</xjp:mtype>",
             component_map.mapping_type()
         )?;
-        write!(
+        writeln!(
             writer,
-            "        <xjp:palette length=\"1\" type=\"integer\">{}</xjp:palette>\n",
+            "        <xjp:palette length=\"1\" type=\"integer\">{}</xjp:palette>",
             component_map.palette()
         )?;
-        write!(writer, "      </xjp:mapc>\n")?;
+        writeln!(writer, "      </xjp:mapc>")?;
     }
 
     writer.write(b"    </xjp:cmap>\n")?;
@@ -376,31 +376,31 @@ fn encode_channel_definition_box<W: io::Write>(
     writer: &mut W,
     channel_definition_box: &ChannelDefinitionBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:cdef type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:cdef type=\"box\" length=\"{}\" offset=\"{}\">",
         channel_definition_box.length(),
         channel_definition_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:num_entries length=\"2\" type=\"integer\">{}</xjp:num_entries>\n",
+        "      <xjp:num_entries length=\"2\" type=\"integer\">{}</xjp:num_entries>",
         channel_definition_box.channels().len()
     )?;
     for channel in channel_definition_box.channels() {
-        write!(
+        writeln!(
             writer,
-            "      <xjp:index length=\"2\" type=\"integer\">{}</xjp:index>\n",
+            "      <xjp:index length=\"2\" type=\"integer\">{}</xjp:index>",
             channel.channel_index()
         )?;
-        write!(
+        writeln!(
             writer,
-            "      <xjp:type length=\"2\" type=\"integer\">{}</xjp:type>\n",
+            "      <xjp:type length=\"2\" type=\"integer\">{}</xjp:type>",
             channel.channel_type_u16()
         )?;
-        write!(
+        writeln!(
             writer,
-            "      <xjp:assoc length=\"2\" type=\"integer\">{}</xjp:assoc>\n",
+            "      <xjp:assoc length=\"2\" type=\"integer\">{}</xjp:assoc>",
             channel.channel_association()
         )?;
     }
@@ -412,9 +412,9 @@ fn encode_resolution_box<W: io::Write>(
     writer: &mut W,
     resolution_box: &ResolutionSuperBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:res_ type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:res_ type=\"box\" length=\"{}\" offset=\"{}\">",
         resolution_box.length(),
         resolution_box.offset()
     )?;
@@ -434,40 +434,40 @@ fn encode_capture_resolution_box<W: io::Write>(
     writer: &mut W,
     capture_resolution_box: &CaptureResolutionBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:resc type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:resc type=\"box\" length=\"{}\" offset=\"{}\">",
         capture_resolution_box.length(),
         capture_resolution_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.vertical_capture_grid_resolution_numerator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.vertical_capture_grid_resolution_denominator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.horizontal_capture_grid_resolution_numerator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.horizontal_capture_grid_resolution_denominator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.vertical_capture_grid_resolution_exponent()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.horizontal_capture_grid_resolution_exponent()
     )?;
     writer.write(b"    </xjp:resc>\n")?;
@@ -478,40 +478,40 @@ fn encode_default_display_resolution_box<W: io::Write>(
     writer: &mut W,
     default_display_resolution_box: &DefaultDisplayResolutionBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:resd type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:resd type=\"box\" length=\"{}\" offset=\"{}\">",
         default_display_resolution_box.length(),
         default_display_resolution_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.vertical_display_grid_resolution_numerator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.vertical_display_grid_resolution_denominator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.horizontal_display_grid_resolution_numerator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.horizontal_display_grid_resolution_denominator()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.vertical_display_grid_resolution_exponent()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>\n",
+        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>",
         default_display_resolution_box.horizontal_display_grid_resolution_exponent()
     )?;
 
@@ -523,60 +523,60 @@ fn encode_siz<W: io::Write>(
     writer: &mut W,
     segment: &ImageAndTileSizeMarkerSegment,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:SIZ type=\"marker\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:SIZ type=\"marker\" length=\"{}\" offset=\"{}\">",
         segment.length(),
         segment.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:Rsiz>{}</xjp:Rsiz>\n",
+        "      <xjp:Rsiz>{}</xjp:Rsiz>",
         segment.decoder_capabilities()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:Xsiz>{}</xjp:Xsiz>\n",
+        "      <xjp:Xsiz>{}</xjp:Xsiz>",
         segment.reference_grid_width()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:Ysiz>{}</xjp:Ysiz>\n",
+        "      <xjp:Ysiz>{}</xjp:Ysiz>",
         segment.reference_grid_height()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:OXsiz>{}</xjp:OXsiz>\n",
+        "      <xjp:OXsiz>{}</xjp:OXsiz>",
         segment.image_horizontal_offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:OYsiz>{}</xjp:OYsiz>\n",
+        "      <xjp:OYsiz>{}</xjp:OYsiz>",
         segment.image_vertical_offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:XTsiz>{}</xjp:XTsiz>\n",
+        "      <xjp:XTsiz>{}</xjp:XTsiz>",
         segment.reference_tile_width()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:YTsiz>{}</xjp:YTsiz>\n",
+        "      <xjp:YTsiz>{}</xjp:YTsiz>",
         segment.reference_tile_height()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:XTOsiz>{}</xjp:XTOsiz>\n",
+        "      <xjp:XTOsiz>{}</xjp:XTOsiz>",
         segment.tile_horizontal_offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:YTOsiz>{}</xjp:YTOsiz>\n",
+        "      <xjp:YTOsiz>{}</xjp:YTOsiz>",
         segment.tile_vertical_offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:Csiz>{}</xjp:Csiz>\n",
+        "      <xjp:Csiz>{}</xjp:Csiz>",
         segment.no_components()
     )?;
 
@@ -584,19 +584,19 @@ fn encode_siz<W: io::Write>(
 
     let mut i = 0;
     loop {
-        write!(
+        writeln!(
             writer,
-            "      <xjp:Ssiz>{}</xjp:Ssiz>\n",
+            "      <xjp:Ssiz>{}</xjp:Ssiz>",
             segment.precision(i)?
         )?;
-        write!(
+        writeln!(
             writer,
-            "      <xjp:XRsiz>{}</xjp:XRsiz>\n",
+            "      <xjp:XRsiz>{}</xjp:XRsiz>",
             segment.horizontal_separation(i)?
         )?;
-        write!(
+        writeln!(
             writer,
-            "      <xjp:YRsiz>{}</xjp:YRsiz>\n",
+            "      <xjp:YRsiz>{}</xjp:YRsiz>",
             segment.vertical_separation(i)?
         )?;
 
@@ -605,7 +605,7 @@ fn encode_siz<W: io::Write>(
             break;
         }
     }
-    write!(writer, "    </xjp:SIZ>\n",)?;
+    writeln!(writer, "    </xjp:SIZ>",)?;
 
     Ok(())
 }
@@ -614,42 +614,42 @@ fn encode_coding_style_parameters<W: io::Write>(
     writer: &mut W,
     coding_style_parameters: &CodingStyleParameters,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "        <xjp:num_levels>{}</xjp:num_levels>\n",
+        "        <xjp:num_levels>{}</xjp:num_levels>",
         coding_style_parameters.no_decomposition_levels()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:xcb>{}</xjp:xcb>\n",
+        "        <xjp:xcb>{}</xjp:xcb>",
         coding_style_parameters.code_block_width()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:ycb>{}</xjp:ycb>\n",
+        "        <xjp:ycb>{}</xjp:ycb>",
         coding_style_parameters.code_block_height()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:style>{}</yjp:style>\n",
+        "        <xjp:style>{}</yjp:style>",
         coding_style_parameters.code_block_style()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:wavelet>{:?}</yjp:wavelet>\n",
+        "        <xjp:wavelet>{:?}</yjp:wavelet>",
         coding_style_parameters.transformation()
     )?;
 
     if let Some(precinct_sizes) = coding_style_parameters.precinct_sizes() {
         for precinct_size in precinct_sizes {
-            write!(
+            writeln!(
                 writer,
-                "        <xjp:ppx>{}</xjp:ppx>\n",
+                "        <xjp:ppx>{}</xjp:ppx>",
                 precinct_size.width_exponent()
             )?;
-            write!(
+            writeln!(
                 writer,
-                "        <xjp:ppy>{}</xjp:ppy>\n",
+                "        <xjp:ppy>{}</xjp:ppy>",
                 precinct_size.height_exponent()
             )?;
         }
@@ -662,42 +662,42 @@ fn encode_cod<W: io::Write>(
     writer: &mut W,
     segment: &CodingStyleMarkerSegment,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "    <xjp:COD type=\"marker\" length=\"{}\" offset=\"{}\">\n",
+        "    <xjp:COD type=\"marker\" length=\"{}\" offset=\"{}\">",
         segment.length(),
         segment.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "      <xjp:Scod>{}</xjp:Scod>\n",
+        "      <xjp:Scod>{}</xjp:Scod>",
         segment.coding_style()
     )?;
 
-    write!(writer, "      <xjp:SGcod>\n",)?;
-    write!(
+    writeln!(writer, "      <xjp:SGcod>",)?;
+    writeln!(
         writer,
-        "        <xjp:progression>{:?}</xjp:progression>\n",
+        "        <xjp:progression>{:?}</xjp:progression>",
         segment.progression_order()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:num_layers>{}</xjp:num_layers>\n",
+        "        <xjp:num_layers>{}</xjp:num_layers>",
         segment.no_layers()
     )?;
-    write!(
+    writeln!(
         writer,
-        "        <xjp:colour_conv>{:?}</xjp:colour_conv>\n",
+        "        <xjp:colour_conv>{:?}</xjp:colour_conv>",
         segment.multiple_component_transformation()
     )?;
-    write!(writer, "      </xjp:SGcod>\n",)?;
+    writeln!(writer, "      </xjp:SGcod>",)?;
 
-    write!(writer, "      <xjp:SPcod>\n",)?;
+    writeln!(writer, "      <xjp:SPcod>",)?;
     encode_coding_style_parameters(writer, segment.coding_style_parameters())?;
-    write!(writer, "      </xjp:SPcod>\n",)?;
+    writeln!(writer, "      </xjp:SPcod>",)?;
 
     // Scod length = 1, SGcod length = 4, SPcod (loop) length = 5 - 43, hexbyte
-    write!(writer, "    </xjp:COD>\n",)?;
+    writeln!(writer, "    </xjp:COD>",)?;
 
     Ok(())
 }
@@ -706,17 +706,17 @@ fn encode_qcd<W: io::Write>(
     writer: &mut W,
     segment: &QuantizationDefaultMarkerSegment,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(writer, "    <xjp:QCD>\n",)?;
-    write!(
+    writeln!(writer, "    <xjp:QCD>",)?;
+    writeln!(
         writer,
-        "      <xjp:Sqcd>{}<xjp:Sqcd>\n",
+        "      <xjp:Sqcd>{}<xjp:Sqcd>",
         segment.quantization_style_u8()
     )?;
 
     for value in segment.quantization_values().iter() {
-        write!(writer, "      <xjp:SPqcd>{}<xjp:SPqcd>\n", value)?;
+        writeln!(writer, "      <xjp:SPqcd>{}<xjp:SPqcd>", value)?;
     }
-    write!(writer, "    </xjp:QCD>\n",)?;
+    writeln!(writer, "    </xjp:QCD>",)?;
 
     Ok(())
 }
@@ -725,8 +725,8 @@ fn encode_coc<W: io::Write>(
     writer: &mut W,
     _segment: &CodingStyleMarkerSegment,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(writer, "    <xjp:COC>\n",)?;
-    write!(writer, "    </xjp:COC>\n",)?;
+    writeln!(writer, "    <xjp:COC>",)?;
+    writeln!(writer, "    </xjp:COC>",)?;
     todo!();
 }
 
@@ -757,15 +757,15 @@ fn encode_contiguous_codestream<W: io::Write>(
 ) -> Result<(), Box<dyn error::Error>> {
     match contiguous_codestream_box {
         Some(cc_box) => {
-            write!(
+            writeln!(
                 writer,
-                "  <xjp:jp2c type=\"box\" length=\"{}\" offset=\"{}\">\n",
+                "  <xjp:jp2c type=\"box\" length=\"{}\" offset=\"{}\">",
                 cc_box.length(),
                 cc_box.offset()
             )?;
         }
         None => {
-            write!(writer, "  <xjp:jp2c type=\"box\">\n",)?;
+            writeln!(writer, "  <xjp:jp2c type=\"box\">",)?;
         }
     }
 
@@ -783,17 +783,17 @@ fn encode_xml_box<W: io::Write>(
     writer: &mut W,
     xml_box: &XMLBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:_xml_ type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:_xml_ type=\"box\" length=\"{}\" offset=\"{}\">",
         xml_box.length(),
         xml_box.offset()
     )?;
 
     let value = xml_box.format();
-    write!(
+    writeln!(
         writer,
-        "    <xjp:text length=\"{}\" type=\"string\">\n",
+        "    <xjp:text length=\"{}\" type=\"string\">",
         value.len(),
     )?;
     writer.write(b"    <![CDATA[")?;
@@ -808,20 +808,20 @@ fn encode_uuid_box<W: io::Write>(
     writer: &mut W,
     uuid_box: &UUIDBox,
 ) -> Result<(), Box<dyn error::Error>> {
-    write!(
+    writeln!(
         writer,
-        "  <xjp:uuid type=\"box\" length=\"{}\" offset=\"{}\">\n",
+        "  <xjp:uuid type=\"box\" length=\"{}\" offset=\"{}\">",
         uuid_box.length(),
         uuid_box.offset()
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:id length=\"16\" type=\"integer\">{}</xjp:id>\n",
+        "    <xjp:id length=\"16\" type=\"integer\">{}</xjp:id>",
         u128::from_be_bytes(*uuid_box.uuid())
     )?;
-    write!(
+    writeln!(
         writer,
-        "    <xjp:data length=\"{}\" type=\"hexbyte\">{}</xjp:data>\n",
+        "    <xjp:data length=\"{}\" type=\"hexbyte\">{}</xjp:data>",
         uuid_box.data().len(),
         to_hex(uuid_box.data().iter())?
     )?;
@@ -855,7 +855,7 @@ pub fn encode_jp2<W: io::Write>(
     writer.write(b"<?xml version=\"1.0\"?>\n")?;
     writer.write(b"<xjp:jpxml xmlns:xjp=\"http://www.jpeg.org/jpxml/1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"")?;
     // Length is required?
-    if name.len() > 0 {
+    if !name.is_empty() {
         write!(writer, " length=\"{}\"", jp2.length())?;
         write!(writer, " name=\"{}\"", name)?;
     }
@@ -889,7 +889,7 @@ pub fn encode_jp2<W: io::Write>(
             writer,
             &representation,
             &contiguous_codestream,
-            Some(&contiguous_codestream_box),
+            Some(contiguous_codestream_box),
         )?;
     }
     writer.write(b"</xjp:jpxml>\n")?;

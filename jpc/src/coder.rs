@@ -51,7 +51,7 @@ const CONTEXT_INITIAL: [u8; 19] = [
     0,
 ];
 
-fn print_c(n: u32) -> () {
+fn print_c(n: u32) {
     println!("high {:016b}, low {:016b}", c_high(n), c_low(n));
 }
 
@@ -203,7 +203,7 @@ pub fn decode<R: io::Read>(reader: &mut R) -> Result<(), io::Error> {
     // B is the byte pointed to by the compressed image data buffer pointer
     bytein(&mut bp, &mut c, &mut _ct)?;
 
-    c = c << 7;
+    c <<= 7;
     _ct -= 7;
     _a = 0x8000;
 
@@ -211,7 +211,7 @@ pub fn decode<R: io::Read>(reader: &mut R) -> Result<(), io::Error> {
 
     // Decode
     print_c(c);
-    _a = _a - QE[i];
+    _a -= QE[i];
     if c_high(c) < _a {
         if _a & 0x8000 > 0 {
             mps_exchange(&mut _a, &mut i, &mut d)?;

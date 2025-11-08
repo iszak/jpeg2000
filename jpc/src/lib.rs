@@ -1235,8 +1235,9 @@ pub enum CommentRegistrationValue {
 impl CommentRegistrationValue {
     fn new(value: [u8; 2]) -> CommentRegistrationValue {
         match i16::from_be_bytes(value) {
-            1 => CommentRegistrationValue::Binary,
-            2 => CommentRegistrationValue::Latin,
+            // See ISO/IEC 15444-1:2019 Table A.44
+            0 => CommentRegistrationValue::Binary,
+            1 => CommentRegistrationValue::Latin,
             _ => CommentRegistrationValue::Reserved { value },
         }
     }
@@ -2094,8 +2095,8 @@ pub struct Header {
     // CRG (Optional)
     component_registration: ComponentRegistrationSegment,
 
-    // COM (Optional)
-    comment_marker_segment: Option<CommentMarkerSegment>,
+    // COM (Optional, repeatable)
+    comment_marker_segments: Vec<CommentMarkerSegment>,
 }
 
 impl Header {
@@ -2108,8 +2109,8 @@ impl Header {
     pub fn quantization_default_marker_segment(&self) -> &QuantizationDefaultMarkerSegment {
         &self.quantization_default_marker_segment.as_ref().unwrap()
     }
-    pub fn comment_marker_segment(&self) -> &Option<CommentMarkerSegment> {
-        &self.comment_marker_segment
+    pub fn comment_marker_segments(&self) -> &Vec<CommentMarkerSegment> {
+        &self.comment_marker_segments
     }
 }
 
@@ -2288,7 +2289,8 @@ impl ContiguousCodestream {
 
                     // COM (Optional)
                     MARKER_SYMBOL_COM => {
-                        header.comment_marker_segment = Some(self.decode_com(reader)?);
+                        let comment_marker_segment = self.decode_com(reader)?;
+                        header.comment_marker_segments.push(comment_marker_segment);
                     }
 
                     // Start of tile bit-stream

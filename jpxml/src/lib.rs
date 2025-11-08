@@ -125,7 +125,7 @@ fn encode_signature_box<W: io::Write>(
         "    <xjp:signature length=\"8\" type=\"hexbyte\">{}</xjp:signature>",
         to_hex(signature_box.signature().iter())?
     )?;
-    writer.write(b"  </xjp:jP__>\n")?;
+    writer.write_all(b"  </xjp:jP__>\n")?;
     Ok(())
 }
 
@@ -157,7 +157,7 @@ fn encode_file_type_box<W: io::Write>(
             compatibility
         )?;
     }
-    writer.write(b"  </xjp:ftyp>\n")?;
+    writer.write_all(b"  </xjp:ftyp>\n")?;
     Ok(())
 }
 
@@ -214,7 +214,7 @@ fn encode_header_super_box<W: io::Write>(
         "      <xjp:ipr type=\"integer\" length=\"1\">{}</xjp:ipr>",
         image_header_box.intellectual_property()
     )?;
-    writer.write(b"    </xjp:ihdr>\n")?;
+    writer.write_all(b"    </xjp:ihdr>\n")?;
 
     if let Some(bits_per_component_box) = &header_super_box.bits_per_component_box {
         encode_bits_per_component_box(writer, bits_per_component_box)?;
@@ -237,7 +237,7 @@ fn encode_header_super_box<W: io::Write>(
         encode_resolution_box(writer, resolution_box)?;
     }
 
-    writer.write(b"  </xjp:jp2h>\n")?;
+    writer.write_all(b"  </xjp:jp2h>\n")?;
     Ok(())
 }
 
@@ -296,7 +296,7 @@ fn encode_colour_specification_box<W: io::Write>(
             enumerated_colour_space
         )?;
     }
-    writer.write(b"    </xjp:colr>\n")?;
+    writer.write_all(b"    </xjp:colr>\n")?;
     Ok(())
 }
 
@@ -333,7 +333,7 @@ fn encode_palette_box<W: io::Write>(
             to_hex(generated_component.values().iter())?
         )?;
     }
-    writer.write(b"    </xjp:pclr>\n")?;
+    writer.write_all(b"    </xjp:pclr>\n")?;
     Ok(())
 }
 
@@ -369,7 +369,7 @@ fn encode_component_mapping_box<W: io::Write>(
         writeln!(writer, "      </xjp:mapc>")?;
     }
 
-    writer.write(b"    </xjp:cmap>\n")?;
+    writer.write_all(b"    </xjp:cmap>\n")?;
     Ok(())
 }
 fn encode_channel_definition_box<W: io::Write>(
@@ -404,7 +404,7 @@ fn encode_channel_definition_box<W: io::Write>(
             channel.channel_association()
         )?;
     }
-    writer.write(b"    </xjp:cdef>\n")?;
+    writer.write_all(b"    </xjp:cdef>\n")?;
     Ok(())
 }
 
@@ -426,7 +426,7 @@ fn encode_resolution_box<W: io::Write>(
         encode_default_display_resolution_box(writer, default_display_resolution_box)?;
     }
 
-    writer.write(b"  </xjp:res_>\n")?;
+    writer.write_all(b"  </xjp:res_>\n")?;
     Ok(())
 }
 
@@ -470,7 +470,7 @@ fn encode_capture_resolution_box<W: io::Write>(
         "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>",
         capture_resolution_box.horizontal_capture_grid_resolution_exponent()
     )?;
-    writer.write(b"    </xjp:resc>\n")?;
+    writer.write_all(b"    </xjp:resc>\n")?;
     Ok(())
 }
 
@@ -515,7 +515,7 @@ fn encode_default_display_resolution_box<W: io::Write>(
         default_display_resolution_box.horizontal_display_grid_resolution_exponent()
     )?;
 
-    writer.write(b"    </xjp:resd>\n")?;
+    writer.write_all(b"    </xjp:resd>\n")?;
     Ok(())
 }
 
@@ -775,7 +775,7 @@ fn encode_contiguous_codestream<W: io::Write>(
         todo!();
     }
 
-    writer.write(b"  </xjp:jp2c>\n")?;
+    writer.write_all(b"  </xjp:jp2c>\n")?;
     Ok(())
 }
 
@@ -796,11 +796,11 @@ fn encode_xml_box<W: io::Write>(
         "    <xjp:text length=\"{}\" type=\"string\">",
         value.len(),
     )?;
-    writer.write(b"    <![CDATA[")?;
+    writer.write_all(b"    <![CDATA[")?;
     write!(writer, "{}", value)?;
-    writer.write(b"]]>\n")?;
-    writer.write(b"    </xjp:text>\n")?;
-    writer.write(b"  </xjp:_xml_>\n")?;
+    writer.write_all(b"]]>\n")?;
+    writer.write_all(b"    </xjp:text>\n")?;
+    writer.write_all(b"  </xjp:_xml_>\n")?;
     Ok(())
 }
 
@@ -825,7 +825,7 @@ fn encode_uuid_box<W: io::Write>(
         uuid_box.data().len(),
         to_hex(uuid_box.data().iter())?
     )?;
-    writer.write(b"  </xjp:uuid>\n")?;
+    writer.write_all(b"  </xjp:uuid>\n")?;
     Ok(())
 }
 
@@ -852,14 +852,14 @@ pub fn encode_jp2<W: io::Write>(
 
     let jp2 = decode_jp2(&mut reader)?;
 
-    writer.write(b"<?xml version=\"1.0\"?>\n")?;
-    writer.write(b"<xjp:jpxml xmlns:xjp=\"http://www.jpeg.org/jpxml/1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"")?;
+    writer.write_all(b"<?xml version=\"1.0\"?>\n")?;
+    writer.write_all(b"<xjp:jpxml xmlns:xjp=\"http://www.jpeg.org/jpxml/1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"")?;
     // Length is required?
     if !name.is_empty() {
         write!(writer, " length=\"{}\"", jp2.length())?;
         write!(writer, " name=\"{}\"", name)?;
     }
-    writer.write(b">\n")?;
+    writer.write_all(b">\n")?;
 
     if let Some(signature_box) = jp2.signature_box() {
         encode_signature_box(writer, signature_box)?;
@@ -892,7 +892,7 @@ pub fn encode_jp2<W: io::Write>(
             Some(contiguous_codestream_box),
         )?;
     }
-    writer.write(b"</xjp:jpxml>\n")?;
+    writer.write_all(b"</xjp:jpxml>\n")?;
 
     Ok(())
 }
@@ -904,10 +904,10 @@ pub fn encode_jpc<W: io::Write>(
 ) -> Result<(), Box<dyn error::Error>> {
     let mut reader = BufReader::new(file);
 
-    writer.write(b"<?xml version=\"1.0\"?>\n")?;
-    writer.write(b"<xjp:jpxml xmlns:xjp=\"http://www.jpeg.org/jpxml/1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"")?;
+    writer.write_all(b"<?xml version=\"1.0\"?>\n")?;
+    writer.write_all(b"<xjp:jpxml xmlns:xjp=\"http://www.jpeg.org/jpxml/1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"")?;
     let contiguous_codestream = decode_jpc(&mut reader)?;
     encode_contiguous_codestream(writer, &representation, &contiguous_codestream, None)?;
-    writer.write(b"</xjp:jpxml>\n")?;
+    writer.write_all(b"</xjp:jpxml>\n")?;
     Ok(())
 }

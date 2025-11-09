@@ -26,10 +26,10 @@ impl fmt::Display for JP2000Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::DecodingContainer { error } => {
-                write!(f, "error decoding jp2 container {}", error.to_string())
+                write!(f, "error decoding jp2 container {}", error)
             }
             Self::DecodingCodestream { error } => {
-                write!(f, "error decoding jpc codestream {}", error.to_string())
+                write!(f, "error decoding jpc codestream {}", error)
             }
             Self::UnsupportedExtension { extension } => {
                 write!(f, "unsupported extension {}", extension)
@@ -85,10 +85,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     match opts.subcommand {
         SubCommand::Decode(c) => {
             let path = Path::new(&c.path);
-            let extension = match path.extension().and_then(OsStr::to_str) {
-                Some(value) => value,
-                None => "",
-            };
+            let extension = path.extension().and_then(OsStr::to_str).unwrap_or_default();
 
             let file = File::open(path)?;
 
@@ -107,27 +104,21 @@ fn run() -> Result<(), Box<dyn Error>> {
                     };
                     for contiguous_codestreams_box in jp2.contiguous_codestreams_boxes() {
                         reader.seek(io::SeekFrom::Start(contiguous_codestreams_box.offset))?;
-                        match decode_jpc(&mut reader) {
-                            Err(error) => {
-                                return Err(JP2000Error::DecodingCodestream {
-                                    error: error.to_string(),
-                                }
-                                .into())
+                        if let Err(error) = decode_jpc(&mut reader) {
+                            return Err(JP2000Error::DecodingCodestream {
+                                error: error.to_string(),
                             }
-                            Ok(_) => {}
+                            .into())
                         };
                     }
                 }
                 "jpc" | "j2c" => {
                     let mut reader = BufReader::new(file);
-                    match decode_jpc(&mut reader) {
-                        Err(error) => {
-                            return Err(JP2000Error::DecodingCodestream {
-                                error: error.to_string(),
-                            }
-                            .into())
+                    if let Err(error) = decode_jpc(&mut reader) {
+                        return Err(JP2000Error::DecodingCodestream {
+                            error: error.to_string(),
                         }
-                        Ok(_) => {}
+                        .into())
                     };
                 }
                 _ => {
@@ -140,14 +131,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
         SubCommand::JPXML(c) => {
             let path = Path::new(&c.path);
-            let filename = match path.file_name().and_then(OsStr::to_str) {
-                Some(value) => value,
-                None => "",
-            };
-            let extension = match path.extension().and_then(OsStr::to_str) {
-                Some(value) => value,
-                None => "",
-            };
+            let filename = path.file_name().and_then(OsStr::to_str).unwrap_or_default();
+            let extension = path.extension().and_then(OsStr::to_str).unwrap_or_default();
 
             let file = File::open(path)?;
 
@@ -187,7 +172,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 fn main() -> Result<(), Box<dyn Error>> {
     match run() {
         Err(e) => {
-            return Err(e.to_string().into());
+            Err(e.to_string().into())
         }
         Ok(_) => Ok(()),
     }

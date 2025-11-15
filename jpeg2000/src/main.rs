@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use clap::Parser;
+use clap::{Args, Parser, Subcommand};
 use std::error;
 use std::error::Error;
 use std::ffi::OsStr;
@@ -39,27 +39,29 @@ impl fmt::Display for JP2000Error {
 }
 
 #[derive(Parser)]
-struct Opts {
+struct Cli {
     #[clap(subcommand)]
-    subcommand: SubCommand,
+    command: Commands,
 }
 
-#[derive(Parser)]
-enum SubCommand {
+#[derive(Subcommand)]
+enum Commands {
     /// Decode .jp2 container or .jpc codestream file (noop)
+    #[command(name = "decode")]
     Decode(Decode),
 
     /// Encode .jp2 container or .jpc codestream file to JPXML document (stdout)
+    #[command(name = "jpxml")]
     JpXml(JpXml),
 }
 
-#[derive(Parser)]
+#[derive(Args)]
 struct Decode {
     /// Path to .jp2 file
     path: String,
 }
 
-#[derive(Parser)]
+#[derive(Args)]
 struct JpXml {
     /// Path to .jp2 file
     path: String,
@@ -80,10 +82,10 @@ struct JpXml {
 fn run() -> Result<(), Box<dyn Error>> {
     env_logger::init();
 
-    let opts: Opts = Opts::parse();
+    let opts: Cli = Cli::parse();
 
-    match opts.subcommand {
-        SubCommand::Decode(c) => {
+    match opts.command {
+        Commands::Decode(c) => {
             let path = Path::new(&c.path);
             let extension = path.extension().and_then(OsStr::to_str).unwrap_or_default();
 
@@ -108,7 +110,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                             return Err(JP2000Error::DecodingCodestream {
                                 error: error.to_string(),
                             }
-                            .into())
+                            .into());
                         };
                     }
                 }
@@ -118,7 +120,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                         return Err(JP2000Error::DecodingCodestream {
                             error: error.to_string(),
                         }
-                        .into())
+                        .into());
                     };
                 }
                 _ => {
@@ -129,7 +131,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        SubCommand::JpXml(c) => {
+        Commands::JpXml(c) => {
             let path = Path::new(&c.path);
             let filename = path.file_name().and_then(OsStr::to_str).unwrap_or_default();
             let extension = path.extension().and_then(OsStr::to_str).unwrap_or_default();
@@ -171,9 +173,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     match run() {
-        Err(e) => {
-            Err(e.to_string().into())
-        }
+        Err(e) => Err(e.to_string().into()),
         Ok(_) => Ok(()),
     }
 }

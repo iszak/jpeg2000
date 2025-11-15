@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufReader, path::Path};
 
-use jpc::{CommentRegistrationValue, decode_jpc};
+use jpc::{decode_jpc, CommentRegistrationValue};
 
 #[test]
 fn test_blue() {
@@ -49,6 +49,8 @@ fn test_blue() {
     let com = header.comment_marker_segments().first().unwrap();
     assert_eq!(com.registration_value(), CommentRegistrationValue::Latin);
     assert!(com.comment_utf8().is_ok());
-    assert_eq!(com.comment_utf8().unwrap(), "Created by OpenJPEG version 2.5.0");
-
+    assert_eq!(
+        com.comment_utf8().unwrap(),
+        "Created by OpenJPEG version 2.5.0"
+    );
 }

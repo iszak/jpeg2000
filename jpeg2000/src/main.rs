@@ -108,7 +108,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                             return Err(JP2000Error::DecodingCodestream {
                                 error: error.to_string(),
                             }
-                            .into())
+                            .into());
                         };
                     }
                 }
@@ -118,7 +118,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                         return Err(JP2000Error::DecodingCodestream {
                             error: error.to_string(),
                         }
-                        .into())
+                        .into());
                     };
                 }
                 _ => {
@@ -171,9 +171,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     match run() {
-        Err(e) => {
-            Err(e.to_string().into())
-        }
+        Err(e) => Err(e.to_string().into()),
         Ok(_) => Ok(()),
     }
 }

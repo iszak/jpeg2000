@@ -136,7 +136,7 @@ const MARKER_SYMBOL_EPH: MarkerSymbol = [255, 146]; // End of packet header
 const MARKER_SYMBOL_CRG: MarkerSymbol = [255, 99]; // Component registration
 const MARKER_SYMBOL_COM: MarkerSymbol = [255, 100]; // Comment
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ProgressionOrder {
     // 0000 0000 Layer-resolution level-component-position progression
     LRLCPP,
@@ -170,8 +170,8 @@ impl ProgressionOrder {
     }
 }
 
-#[derive(Debug)]
-enum CodingBlockStyle {
+#[derive(Debug, PartialEq)]
+pub enum CodingBlockStyle {
     // xxxx xxx0 No selective arithmetic coding bypass
     NoSelectiveArithmeticCodingBypass,
 
@@ -222,7 +222,7 @@ impl CodingBlockStyle {
             coding_block_styles.push(CodingBlockStyle::NoSelectiveArithmeticCodingBypass);
         }
 
-        if value & 0b_0000_0010 !=0  {
+        if value & 0b_0000_0010 != 0 {
             coding_block_styles.push(CodingBlockStyle::ResetContextProbabilities);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoResetOfContextProbabilities);
@@ -340,7 +340,7 @@ impl CodingStyleComponent {
 const MULTIPLE_COMPONENT_TRANSFORMATION_NONE: u8 = 0b_0000_0000;
 const MULTIPLE_COMPONENT_TRANSFORMATION_MULTIPLE: u8 = 0b_0000_0001;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MultipleComponentTransformation {
     // No multiple component transformation specified.
     None,
@@ -367,15 +367,17 @@ impl MultipleComponentTransformation {
 const TRANSFORMATION_FILTER_IRREVERSIBLE: [u8; 1] = [0];
 const TRANSFORMATION_FILTER_REVERSIBLE: [u8; 1] = [1];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TransformationFilter {
-    // 9-7 irreversible filter
+    /// 9-7 irreversible filter
     Irreversible,
-    // 5-3 reversible filter
+    /// 5-3 reversible filter
     Reversible,
 
     // All other values reserved
-    Reserved { value: [u8; 1] },
+    Reserved {
+        value: [u8; 1],
+    },
 }
 
 impl TransformationFilter {
@@ -587,19 +589,27 @@ impl CodingStyleParameters {
         self.no_decomposition_levels[0]
     }
 
+    /// Code block width
+    ///
+    /// The value is encoded as an exponent - 2. So if the encoded value is 4,
+    /// the exponent is 6, and the block is 2<sup>6</sup> or 64.
     pub fn code_block_width(&self) -> u8 {
-        self.code_block_width[0]
+        1 << (self.code_block_width[0] + 2)
     }
 
+    /// Code block height
+    ///
+    /// The value is encoded as an exponent - 2. So if the encoded value is 4,
+    /// the exponent is 6, and the block is 2<sup>6</sup> or 64.
     pub fn code_block_height(&self) -> u8 {
-        self.code_block_height[0]
+        1 << (self.code_block_height[0] + 2)
     }
 
     pub fn code_block_style(&self) -> u8 {
         self.code_block_style[0]
     }
 
-    fn coding_block_styles(&self) -> Vec<CodingBlockStyle> {
+    pub fn coding_block_styles(&self) -> Vec<CodingBlockStyle> {
         CodingBlockStyle::new(self.code_block_style[0])
     }
 
@@ -612,16 +622,15 @@ impl CodingStyleParameters {
     }
 
     pub fn precinct_sizes(&self) -> Option<Vec<CodingStyleParametersPrecinctSize>> {
-        if self.has_precinct_size() {
-            return None;
+        match self.has_precinct_size() {
+            false => None,
+            true => Some(
+                self.precinct_size
+                    .iter()
+                    .map(|value: &u8| CodingStyleParametersPrecinctSize { value: *value })
+                    .collect(),
+            ),
         }
-
-        Some(
-            self.precinct_size
-                .iter()
-                .map(|value: &u8| CodingStyleParametersPrecinctSize { value: *value })
-                .collect(),
-        )
     }
 }
 
@@ -773,7 +782,7 @@ struct TilePartLength {
     // tile-part to the end of the bit stream data for that tile-part.
     //
     // There is one value for every tile-part
-    tile_length: [u8; 4],
+    tile_length: u32,
 }
 
 #[derive(Debug, PartialEq)]
@@ -790,14 +799,14 @@ impl TilePartParameterSize {
     fn new(value: u8) -> Vec<TilePartParameterSize> {
         let mut tile_part_parameter_sizes = vec![];
 
-        match value << 2 >> 6 {
+        match (value >> 4) & 0b11 {
             0 => tile_part_parameter_sizes.push(TilePartParameterSize::TtlmNone),
             1 => tile_part_parameter_sizes.push(TilePartParameterSize::Ttlm8Bit),
             2 => tile_part_parameter_sizes.push(TilePartParameterSize::Ttlm16Bit),
             _ => {} // TODO: Add reserve values by removed known bits
         }
 
-        match value << 1 >> 7 {
+        match (value >> 6) & 0b1 {
             0 => tile_part_parameter_sizes.push(TilePartParameterSize::Ptlm16Bit),
             1 => tile_part_parameter_sizes.push(TilePartParameterSize::Ptlm32Bit),
             _ => {} // TODO: Add reserve values by removed known bits
@@ -892,7 +901,7 @@ pub struct TilePacketLength {
     // If packet headers are stored with the packet, this length includes the
     // packet header. If packet headers are stored in the PPM or PPT, this
     // length does not include the packet header lengths.
-    packet_length: Vec<u8>,
+    packet_length: Vec<Vec<u8>>,
 }
 
 // A.7.4
@@ -1267,7 +1276,8 @@ impl CommentMarkerSegment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+// TODO: possibly combine with the jp2 QuantizationStyle
 pub enum QuantizationStyle {
     No,
     ScalarDerived { guard: u8 },
@@ -1780,6 +1790,7 @@ impl ContiguousCodestream {
         let mut segment = TilePartLengthsSegment::default();
         segment.offset = reader.stream_position()?;
         segment.length = self.decode_length(reader)?;
+        reader.read_exact(&mut segment.index)?;
         reader.read_exact(&mut segment.parameter_sizes)?;
 
         let parameter_sizes = segment.parameter_sizes();
@@ -1804,16 +1815,24 @@ impl ContiguousCodestream {
 
             // Ttlm
             if parameter_sizes.contains(&TilePartParameterSize::Ttlm8Bit) {
-                reader.take(1).read_exact(&mut tile_part_length.tile_index)?;
+                let mut buf = [0u8; 1];
+                reader.take(1).read_exact(&mut buf)?;
+                tile_part_length.tile_index[1] = buf[0];
             } else if parameter_sizes.contains(&TilePartParameterSize::Ttlm16Bit) {
-                reader.take(2).read_exact(&mut tile_part_length.tile_index)?;
+                reader
+                    .take(2)
+                    .read_exact(&mut tile_part_length.tile_index)?;
             }
 
             // Ptlm
             if parameter_sizes.contains(&TilePartParameterSize::Ptlm16Bit) {
-                reader.take(2).read_exact(&mut tile_part_length.tile_length)?;
+                let mut buf = [0u8; 2];
+                reader.take(2).read_exact(&mut buf)?;
+                tile_part_length.tile_length = u16::from_be_bytes(buf) as u32;
             } else if parameter_sizes.contains(&TilePartParameterSize::Ptlm32Bit) {
-                reader.take(4).read_exact(&mut tile_part_length.tile_length)?;
+                let mut buf = [0u8; 4];
+                reader.take(4).read_exact(&mut buf)?;
+                tile_part_length.tile_length = u32::from_be_bytes(buf);
             }
             segment.tile_part_lengths.push(tile_part_length);
         }
@@ -1988,6 +2007,42 @@ impl ContiguousCodestream {
         Ok(())
     }
 
+    // TODO: combine with function above once we have test data
+    fn decode_packet_length_plt<R: io::Read + io::Seek>(
+        &mut self,
+        reader: &mut R,
+        vec: &mut Vec<Vec<u8>>,
+    ) -> Result<(), Box<dyn error::Error>> {
+        let mut packet_length: [u8; 1] = [0; 1];
+        let mut iplt: Vec<u8> = vec![];
+        loop {
+            reader.read_exact(&mut packet_length)?;
+            match packet_length[0] >> 7 {
+                // 0xxx xxxx - Last 7 bits of packet length, terminate number
+                0 => {
+                    iplt.push((packet_length[0] << 1) >> 1);
+                    break;
+                }
+                // 1xxx xxxx - Continue reading
+                _ => {
+                    // These are not the last 7 bits that make up the packet
+                    // length. Instead, these 7 bits are a portion of those that
+                    // make up the packet length.
+                    //
+                    // The packet length has been broken into 7-bit segments
+                    // which are sent in order from the most significant segment
+                    // to the least significant segment.
+                    //
+                    // Furthermore, the bits in the most significant segment
+                    // are right justified to the byte boundary.
+                    iplt.push((packet_length[0] << 1) >> 2);
+                }
+            }
+        }
+        vec.push(iplt);
+        Ok(())
+    }
+
     fn decode_plt<R: io::Read + io::Seek>(
         &mut self,
         reader: &mut R,
@@ -2000,7 +2055,9 @@ impl ContiguousCodestream {
 
         reader.read_exact(&mut segment.index)?;
 
-        self.decode_packet_length(reader, &mut segment.packet_length)?;
+        while reader.stream_position()? < (segment.offset + segment.length as u64) {
+            self.decode_packet_length_plt(reader, &mut segment.packet_length)?;
+        }
 
         info!("PLT end at byte offset {}", reader.stream_position()?);
 
@@ -2080,20 +2137,20 @@ pub struct Header {
     // RGN (Optional)
     regions: Vec<RegionOfInterestSegment>,
 
-    // POC (Required)
-    progression_order_change: ProgressionOrderChangeSegment,
+    // POC (Optional)
+    progression_order_change: Option<ProgressionOrderChangeSegment>,
 
     // PPM (Optional)
     packed_packet_headers: Vec<PackedPacketHeaderSegment>,
 
     // TLM (Optional)
-    tile_part_lengths: TilePartLengthsSegment,
+    tile_part_lengths: Option<TilePartLengthsSegment>,
 
     // PLM (Optional)
     packet_lengths: Vec<PacketLengthSegment>,
 
     // CRG (Optional)
-    component_registration: ComponentRegistrationSegment,
+    component_registration: Option<ComponentRegistrationSegment>,
 
     // COM (Optional, repeatable)
     comment_marker_segments: Vec<CommentMarkerSegment>,
@@ -2106,9 +2163,82 @@ impl Header {
     pub fn coding_style_marker_segment(&self) -> &CodingStyleMarkerSegment {
         self.coding_style_marker_segment.as_ref().unwrap()
     }
+
+    /// Coding style component (COC) segment
+    ///
+    /// Describes the coding style and number of decomposition levels for compressing
+    /// a particular component. If present, the values in these segments overrides the
+    /// COD coding style for a specific component. These values can in turn be overridden
+    /// for specific tile parts.
+    pub fn coding_style_component_segment(&self) -> &Vec<CodingStyleComponentSegment> {
+        &self.coding_style_component_segment
+    }
+
     pub fn quantization_default_marker_segment(&self) -> &QuantizationDefaultMarkerSegment {
         self.quantization_default_marker_segment.as_ref().unwrap()
     }
+
+    /// Quantization component (QCC) segments
+    ///
+    /// Describes the quantization used for compressing a particular component.
+    /// If present, the values in these segments overrides the
+    /// QCD quantization for a specific component. These values can in turn be overridden
+    /// for specific tile parts.
+    pub fn quantization_component_segments(&self) -> &Vec<QuantizationComponentSegment> {
+        &self.quantization_component_segments
+    }
+
+    /// Region of interest (RGN) segments
+    ///
+    /// Signals the presence of an ROI in the codestream.
+    pub fn region_of_interest_segments(&self) -> &Vec<RegionOfInterestSegment> {
+        &self.regions
+    }
+
+    /// Progression order change (POC) segment
+    ///
+    /// Describes the bounds and progression order for any progression order than that
+    /// specified in the COD marker segments. If present, the values in this segment override
+    /// the progression order specified in COD. These values can in turn be overridden for
+    /// specific tile parts.
+    pub fn progression_order_change_segment(&self) -> &Option<ProgressionOrderChangeSegment> {
+        &self.progression_order_change
+    }
+
+    /// Tile-part lengths (TLM) segment
+    ///
+    /// Describes the length of every tile-part in the codestream.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.7.1 for how this works.
+    pub fn tile_part_lengths_segment(&self) -> &Option<TilePartLengthsSegment> {
+        &self.tile_part_lengths
+    }
+
+    /// Packet length, main header (PLM) segments
+    ///
+    /// A list of packet lengths fin the tile-parts for every tile-part in order.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.7.2 for how this works.
+    pub fn packet_lengths_segments(&self) -> &Vec<PacketLengthSegment> {
+        &self.packet_lengths
+    }
+
+    /// Packed packet headers, main header (PPM) segments
+    ///
+    /// A collection of the packet headers from all tiles.
+    pub fn packed_packet_headers_segments(&self) -> &Vec<PackedPacketHeaderSegment> {
+        &self.packed_packet_headers
+    }
+
+    /// Component registration (CRG) segment
+    ///
+    /// Allows specific registration of components with respect to each other.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.9.1 for how this works.
+    pub fn component_registration_segment(&self) -> &Option<ComponentRegistrationSegment> {
+        &self.component_registration
+    }
+
     pub fn comment_marker_segments(&self) -> &Vec<CommentMarkerSegment> {
         &self.comment_marker_segments
     }
@@ -2179,7 +2309,7 @@ struct TileHeader {
     packed_packet_headers: Option<TilePackedPacketHeaderSegment>,
 
     // PLT (Optional)
-    packet_lengths: Vec<PacketLengthSegment>,
+    packet_lengths: Vec<TilePacketLength>,
 
     // COM (Optional)
     comment_marker_segment: Option<CommentMarkerSegment>,
@@ -2261,7 +2391,8 @@ impl ContiguousCodestream {
 
                     // POC (Required in main or tile for any progression order changes)
                     MARKER_SYMBOL_POC => {
-                        header.progression_order_change = self.decode_poc(reader, no_components)?;
+                        header.progression_order_change =
+                            Some(self.decode_poc(reader, no_components)?);
                     }
 
                     // PPM (Optional, either PPM or PPT or codestream packet headers required)
@@ -2273,7 +2404,7 @@ impl ContiguousCodestream {
 
                     // TLM (Optional)
                     MARKER_SYMBOL_TLM => {
-                        header.tile_part_lengths = self.decode_tlm(reader)?;
+                        header.tile_part_lengths = Some(self.decode_tlm(reader)?);
                     }
 
                     // PLM (Optional)
@@ -2284,7 +2415,8 @@ impl ContiguousCodestream {
 
                     // CRG (Optional)
                     MARKER_SYMBOL_CRG => {
-                        header.component_registration = self.decode_crg(reader, no_components)?;
+                        header.component_registration =
+                            Some(self.decode_crg(reader, no_components)?);
                     }
 
                     // COM (Optional)
@@ -2451,7 +2583,7 @@ impl ContiguousCodestream {
 
                     // PLT (Optional)
                     MARKER_SYMBOL_PLT => {
-                        let packet_length = self.decode_plm(reader)?;
+                        let packet_length = self.decode_plt(reader)?;
                         tile_header.packet_lengths.push(packet_length);
                     }
 
@@ -2464,7 +2596,9 @@ impl ContiguousCodestream {
                         reader.seek(io::SeekFrom::Current(-2))?;
                         break;
                     }
-                    _ => panic!(),
+                    _ => {
+                        panic!();
+                    }
                 },
 
                 Err(e) => return Err(e.into()),
@@ -2517,9 +2651,12 @@ impl ContiguousCodestream {
                                 offset: reader.stream_position()? - 2,
                             }
                             .into());
+                        } else {
+                            // Start of Packet (SOP) - see A.8.1
+                            let mut buf = [0u8; 4];
+                            reader.read_exact(&mut buf)?;
+                            // TODO: verify packet number
                         }
-                        // A.8.1
-                        todo!();
                     }
                     MARKER_SYMBOL_EPH => {
                         // If packet headers are not in-bit stream (i.e., PPM or PPT marker segments are used), this
@@ -2540,9 +2677,10 @@ impl ContiguousCodestream {
                                 offset: reader.stream_position()? - 2,
                             }
                             .into());
+                        } else {
+                            // End Packet Header (EPH) - see A.8.2
+                            // No body, just keep going
                         }
-                        // A.8.2
-                        todo!();
                     }
                     // delimiting markers
                     MARKER_SYMBOL_EOC => {

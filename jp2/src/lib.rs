@@ -375,8 +375,7 @@ impl JBox for FileTypeBox {
 
         // A file shall have at least one CL field in the File Type box, and shall contain the value‘jp2\040’ in one of the CL fields in the File Type box, and all conforming readers shall properly interpret all files with ‘jp2\040’ in one of the CL fields.
         // Other values of the Compatibility list field are reserved for ISO use.
-        if !self.compatibility_list.contains(&BRAND_JP2)
-        {
+        if !self.compatibility_list.contains(&BRAND_JP2) {
             return Err(JP2Error::NotCompatible {
                 compatibility_list: self.compatibility_list().clone(),
             }
@@ -785,6 +784,10 @@ impl ImageHeaderBox {
         else {
             todo!("reserved");
         }
+    }
+
+    pub fn values_are_signed(&self) -> bool {
+        (self.components_bits[0] & 0x80) == 0x80
     }
 
     // Compression type.
@@ -1454,7 +1457,8 @@ type Method = [u8; 1];
 const METHOD_ENUMERATED_COLOUR_SPACE: Method = [1];
 const METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE: Method = [2];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+// TODO: possibly find a more descriptive name
 pub enum Methods {
     EnumeratedColourSpace,
     RestrictedICCProfile,
@@ -2198,7 +2202,8 @@ impl CommentMarkerSegment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+// TODO: possibly combine with the jpc QuantizationStyle
 pub enum QuantizationStyle {
     No,
     ScalarDerived,

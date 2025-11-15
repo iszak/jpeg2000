@@ -1,6 +1,9 @@
 use std::{fs::File, io::BufReader, path::Path};
 
-use jpc::{CommentRegistrationValue, decode_jpc};
+use jpc::{
+    decode_jpc, CodingBlockStyle, CommentRegistrationValue, MultipleComponentTransformation,
+    ProgressionOrder, TransformationFilter,
+};
 
 #[test]
 fn test_blue() {
@@ -17,7 +20,6 @@ fn test_blue() {
     assert_eq!(codestream.offset(), 0);
 
     let header = codestream.header();
-    println!("\nheader: {header:?}");
 
     let siz = header.image_and_tile_size_marker_segment();
     assert_eq!(siz.reference_grid_width(), 128);
@@ -45,10 +47,82 @@ fn test_blue() {
     assert_eq!(siz.vertical_separation(1).unwrap(), 1);
     assert_eq!(siz.vertical_separation(2).unwrap(), 1);
 
+    // TODO: CAP
+
+    // TODO: PRF
+
+    // COD
+    let cod = header.coding_style_marker_segment();
+    // Scod
+    assert_eq!(cod.coding_style(), 0);
+    // SGcod
+    assert_eq!(cod.progression_order(), ProgressionOrder::LRLCPP);
+    assert_eq!(cod.no_layers(), 1);
+    assert_eq!(
+        cod.multiple_component_transformation(),
+        MultipleComponentTransformation::Multiple
+    );
+    // SPcod
+    assert_eq!(cod.coding_style_parameters().no_decomposition_levels(), 5);
+    // TODO: fix this
+    // assert_eq!(cod.coding_style_parameters().code_block_width(), 64);
+    // TODO: fix this
+    // assert_eq!(cod.coding_style_parameters().code_block_height(), 64);
+    assert_eq!(cod.coding_style_parameters().code_block_style(), 0);
+    assert_eq!(
+        cod.coding_style_parameters().coding_block_styles(),
+        vec![
+            CodingBlockStyle::NoSelectiveArithmeticCodingBypass,
+            CodingBlockStyle::NoResetOfContextProbabilities,
+            CodingBlockStyle::NoTerminationOnEachCodingPass,
+            CodingBlockStyle::NoVerticallyCausalContext,
+            CodingBlockStyle::NoPredictableTermination,
+            CodingBlockStyle::NoSegmentationSymbolsAreUsed
+        ]
+    );
+
+    assert_eq!(
+        cod.coding_style_parameters().transformation(),
+        TransformationFilter::Reversible
+    );
+
+    // TODO: fix this
+    // assert_eq!(cod.coding_style_parameters().has_precinct_size(), true);
+    // assert!(cod.coding_style_parameters().precinct_sizes().is_some());
+
+    // COC
+    assert!(header.coding_style_component_segment().is_empty());
+
+    // TODO: QCD
+
+    // QCC
+    assert!(header.quantization_component_segments().is_empty());
+
+    // RGN
+    assert!(header.region_of_interest_segments().is_empty());
+
+    // POC
+    assert!(header.progression_order_change_segment().is_none());
+
+    // PPM
+    assert!(header.packed_packet_headers_segments().is_empty());
+
+    // TLM
+    assert!(header.tile_part_lengths_segment().is_none());
+
+    // PLM
+    assert!(header.packet_lengths_segments().is_empty());
+
+    // CRG
+    assert!(header.component_registration_segment().is_none());
+
+    // COM
     assert_eq!(header.comment_marker_segments().len(), 1);
     let com = header.comment_marker_segments().first().unwrap();
     assert_eq!(com.registration_value(), CommentRegistrationValue::Latin);
     assert!(com.comment_utf8().is_ok());
-    assert_eq!(com.comment_utf8().unwrap(), "Created by OpenJPEG version 2.5.0");
-
+    assert_eq!(
+        com.comment_utf8().unwrap(),
+        "Created by OpenJPEG version 2.5.0"
+    );
 }

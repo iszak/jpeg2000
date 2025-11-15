@@ -136,7 +136,7 @@ const MARKER_SYMBOL_EPH: MarkerSymbol = [255, 146]; // End of packet header
 const MARKER_SYMBOL_CRG: MarkerSymbol = [255, 99]; // Component registration
 const MARKER_SYMBOL_COM: MarkerSymbol = [255, 100]; // Comment
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ProgressionOrder {
     // 0000 0000 Layer-resolution level-component-position progression
     LRLCPP,
@@ -170,8 +170,8 @@ impl ProgressionOrder {
     }
 }
 
-#[derive(Debug)]
-enum CodingBlockStyle {
+#[derive(Debug, PartialEq)]
+pub enum CodingBlockStyle {
     // xxxx xxx0 No selective arithmetic coding bypass
     NoSelectiveArithmeticCodingBypass,
 
@@ -340,7 +340,7 @@ impl CodingStyleComponent {
 const MULTIPLE_COMPONENT_TRANSFORMATION_NONE: u8 = 0b_0000_0000;
 const MULTIPLE_COMPONENT_TRANSFORMATION_MULTIPLE: u8 = 0b_0000_0001;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MultipleComponentTransformation {
     // No multiple component transformation specified.
     None,
@@ -367,7 +367,7 @@ impl MultipleComponentTransformation {
 const TRANSFORMATION_FILTER_IRREVERSIBLE: [u8; 1] = [0];
 const TRANSFORMATION_FILTER_REVERSIBLE: [u8; 1] = [1];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TransformationFilter {
     // 9-7 irreversible filter
     Irreversible,
@@ -599,7 +599,7 @@ impl CodingStyleParameters {
         self.code_block_style[0]
     }
 
-    fn coding_block_styles(&self) -> Vec<CodingBlockStyle> {
+    pub fn coding_block_styles(&self) -> Vec<CodingBlockStyle> {
         CodingBlockStyle::new(self.code_block_style[0])
     }
 
@@ -2080,20 +2080,20 @@ pub struct Header {
     // RGN (Optional)
     regions: Vec<RegionOfInterestSegment>,
 
-    // POC (Required)
-    progression_order_change: ProgressionOrderChangeSegment,
+    // POC (Optional)
+    progression_order_change: Option<ProgressionOrderChangeSegment>,
 
     // PPM (Optional)
     packed_packet_headers: Vec<PackedPacketHeaderSegment>,
 
     // TLM (Optional)
-    tile_part_lengths: TilePartLengthsSegment,
+    tile_part_lengths: Option<TilePartLengthsSegment>,
 
     // PLM (Optional)
     packet_lengths: Vec<PacketLengthSegment>,
 
     // CRG (Optional)
-    component_registration: ComponentRegistrationSegment,
+    component_registration: Option<ComponentRegistrationSegment>,
 
     // COM (Optional, repeatable)
     comment_marker_segments: Vec<CommentMarkerSegment>,
@@ -2106,9 +2106,92 @@ impl Header {
     pub fn coding_style_marker_segment(&self) -> &CodingStyleMarkerSegment {
         self.coding_style_marker_segment.as_ref().unwrap()
     }
+
+    /// Coding style component (COC) segment
+    ///
+    /// Describes the coding style and number of decomposition levels for compressing
+    /// a particular component. If present, the values in these segments overrides the
+    /// COD coding style for a specific component. These values can in turn be overridden
+    /// for specific tile parts.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.6.2 for how this works.
+    pub fn coding_style_component_segment(&self) -> &Vec<CodingStyleComponentSegment> {
+        &self.coding_style_component_segment
+    }
+
     pub fn quantization_default_marker_segment(&self) -> &QuantizationDefaultMarkerSegment {
         self.quantization_default_marker_segment.as_ref().unwrap()
     }
+
+    // Quantization component (QCC) segments
+    ///
+    /// Describes the quantization used for compressing a particular component.
+    /// If present, the values in these segments overrides the
+    /// QCD quantization for a specific component. These values can in turn be overridden
+    /// for specific tile parts.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.6.5 for how this works.
+    pub fn quantization_component_segments(&self) -> &Vec<QuantizationComponentSegment> {
+        &self.quantization_component_segments
+    }
+
+    /// Region of interest (RGN) segments
+    ///
+    /// Signals the presence of an ROI in the codestream.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.6.3 for how this works.
+    pub fn region_of_interest_segments(&self) -> &Vec<RegionOfInterestSegment> {
+        &self.regions
+    }
+
+    /// Progression order change (POC) segment
+    ///
+    /// Describes the bounds and progression order for any progression order than that
+    /// specified in the COD marker segments. If present, the values in this segment override
+    /// the progression order specified in COD. These values can in turn be overridden for
+    /// specific tile parts.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.6.6 for how this works.
+    pub fn progression_order_change_segment(&self) -> &Option<ProgressionOrderChangeSegment> {
+        &self.progression_order_change
+    }
+
+    /// Tile-part lengths (TLM) segment
+    ///
+    /// Describes the length of every tile-part in the codestream.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.7.1 for how this works.
+    pub fn tile_part_lengths_segment(&self) -> &Option<TilePartLengthsSegment> {
+        &self.tile_part_lengths
+    }
+
+    /// Packet length, main header (PLM) segments
+    ///
+    /// A list of packet lengths fin the tile-parts for every tile-part in order.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.7.2 for how this works.
+    pub fn packet_lengths_segments(&self) -> &Vec<PacketLengthSegment> {
+        &self.packet_lengths
+    }
+
+    /// Packed packet headers, main header (PPM) segments
+    ///
+    /// A collection of the packet headers from all tiles.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.7.4 for how this works.
+    pub fn packed_packet_headers_segments(&self) -> &Vec<PackedPacketHeaderSegment> {
+        &self.packed_packet_headers
+    }
+
+    /// Component registration (CRG) segment
+    ///
+    /// Allows specific registration of components with respect to each other.
+    ///
+    /// See ITU-T T.800 or ISO/IEC 15444-1:2019 Section A.9.1 for how this works.
+    pub fn component_registration_segment(&self) -> &Option<ComponentRegistrationSegment> {
+        &self.component_registration
+    }
+
     pub fn comment_marker_segments(&self) -> &Vec<CommentMarkerSegment> {
         &self.comment_marker_segments
     }
@@ -2261,7 +2344,8 @@ impl ContiguousCodestream {
 
                     // POC (Required in main or tile for any progression order changes)
                     MARKER_SYMBOL_POC => {
-                        header.progression_order_change = self.decode_poc(reader, no_components)?;
+                        header.progression_order_change =
+                            Some(self.decode_poc(reader, no_components)?);
                     }
 
                     // PPM (Optional, either PPM or PPT or codestream packet headers required)
@@ -2273,7 +2357,7 @@ impl ContiguousCodestream {
 
                     // TLM (Optional)
                     MARKER_SYMBOL_TLM => {
-                        header.tile_part_lengths = self.decode_tlm(reader)?;
+                        header.tile_part_lengths = Some(self.decode_tlm(reader)?);
                     }
 
                     // PLM (Optional)
@@ -2284,7 +2368,8 @@ impl ContiguousCodestream {
 
                     // CRG (Optional)
                     MARKER_SYMBOL_CRG => {
-                        header.component_registration = self.decode_crg(reader, no_components)?;
+                        header.component_registration =
+                            Some(self.decode_crg(reader, no_components)?);
                     }
 
                     // COM (Optional)

@@ -50,7 +50,7 @@ enum SubCommand {
     Decode(Decode),
 
     /// Encode .jp2 container or .jpc codestream file to JPXML document (stdout)
-    JPXML(JPXML),
+    JpXml(JpXml),
 }
 
 #[derive(Parser)]
@@ -60,7 +60,7 @@ struct Decode {
 }
 
 #[derive(Parser)]
-struct JPXML {
+struct JpXml {
     /// Path to .jp2 file
     path: String,
 
@@ -129,7 +129,7 @@ fn run() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        SubCommand::JPXML(c) => {
+        SubCommand::JpXml(c) => {
             let path = Path::new(&c.path);
             let filename = path.file_name().and_then(OsStr::to_str).unwrap_or_default();
             let extension = path.extension().and_then(OsStr::to_str).unwrap_or_default();

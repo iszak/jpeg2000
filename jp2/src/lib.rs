@@ -117,8 +117,8 @@ enum BoxTypes {
     DefaultDisplayResolution,
     ContiguousCodestream,
     IntellectualProperty,
-    XML,
-    UUID,
+    Xml,
+    Uuid,
     UUIDInfo,
     UUIDList,
     DataEntryURL,
@@ -150,9 +150,9 @@ impl BoxTypes {
 
             BOX_TYPE_CONTIGUOUS_CODESTREAM => BoxTypes::ContiguousCodestream,
             BOX_TYPE_INTELLECTUAL_PROPERTY => BoxTypes::IntellectualProperty,
-            BOX_TYPE_XML => BoxTypes::XML,
+            BOX_TYPE_XML => BoxTypes::Xml,
 
-            BOX_TYPE_UUID => BoxTypes::UUID,
+            BOX_TYPE_UUID => BoxTypes::Uuid,
             BOX_TYPE_UUID_INFO => BoxTypes::UUIDInfo,
             BOX_TYPE_UUID_LIST => BoxTypes::UUIDList,
             BOX_TYPE_DATA_ENTRY_URL => BoxTypes::DataEntryURL,
@@ -2764,7 +2764,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                     reader.stream_position()
                 );
             }
-            BoxTypes::XML => {
+            BoxTypes::Xml => {
                 let mut xml_box = XMLBox {
                     length: box_length,
                     offset: reader.stream_position()?,
@@ -2775,7 +2775,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 xml_boxes.push(xml_box);
                 info!("XMLBox finish at {:?}", reader.stream_position()?);
             }
-            BoxTypes::UUID => {
+            BoxTypes::Uuid => {
                 let mut uuid_box = UUIDBox::default();
                 uuid_box.length = box_length;
                 uuid_box.offset = reader.stream_position()?;

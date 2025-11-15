@@ -1454,7 +1454,8 @@ type Method = [u8; 1];
 const METHOD_ENUMERATED_COLOUR_SPACE: Method = [1];
 const METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE: Method = [2];
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+// TODO: possibly change this name to something more descriptive
 pub enum Methods {
     EnumeratedColourSpace,
     RestrictedICCProfile,

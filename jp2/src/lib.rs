@@ -387,6 +387,7 @@ impl JBox for FileTypeBox {
     }
 }
 
+
 // I.5.3
 //
 // JP2 Header Box
@@ -749,41 +750,55 @@ impl ImageHeaderBox {
         u16::from_be_bytes(self.components_num)
     }
 
-    // Bits per component.
-    //
-    // This parameter specifies the bit depth of the components in the
-    // codestream, minus 1, and is stored as a 1-byte field.
-    //
-    // If the bit depth is the same for all components, then this parameter
-    // specifies that bit depth and shall be equivalent to the values of the
-    // Ssizi fields in the SIZ marker in the codestream (which shall all be
-    // equal).
-    //
-    // If the components vary in bit depth, then the value of this field shall
-    // be 255 and the JP2 Header box shall also contain a Bits Per Component
-    // box defining the bit depth of each component.
-    //
-    // The low 7-bits of the value indicate the bit depth of the components.
-    // The high-bit indicates whether the components are signed or unsigned.
-    // If the high-bit is 1, then the components contain signed values.
-    // If the high-bit is 0, then the components contain unsigned values
+    /// Bits per component.
+    ///
+    /// This parameter specifies the bit depth of the components in the
+    /// codestream, minus 1, and is stored as a 1-byte field.
+    ///
+    /// If the bit depth is the same for all components, then this parameter
+    /// specifies that bit depth and shall be equivalent to the values of the
+    /// Ssiz<sup>i</sup> fields in the SIZ marker in the codestream (which shall all be
+    /// equal).
+    ///
+    /// If the components vary in bit depth, then the value of this field shall
+    /// be 255 and the JP2 Header box shall also contain a Bits Per Component
+    /// box defining the bit depth of each component.
+    ///
+    /// The low 7-bits of the value indicate the bit depth of the components.
+    /// The high-bit indicates whether the components are signed or unsigned.
+    /// If the high-bit is 1, then the components contain signed values.
+    /// If the high-bit is 0, then the components contain unsigned values.
     pub fn components_bits(&self) -> u8 {
         // 1111 1111 (255) Components vary in bit depth
         // 1xxx xxxx (128 - 254) Components are signed values
         // 0xxx xxxx (37 - 127) Components are unsigned values
         if self.components_bits[0] == 255 {
             self.components_bits[0]
+        } else {
+            // x000 0000 — x010 0101 Component bit depth = value + 1. From 1 bit
+            // deep through 38 bits deep respectively (counting the sign bit, if
+            // appropriate)
+            let low_bits = self.components_bits[0] & 0b0111_1111;
+            if low_bits <= 37 {
+                low_bits + 1
+            } else {
+                // All other values reserved for ISO use.
+                todo!("reserved");
+            }
         }
-        // x000 0000 — x010 0101 Component bit depth = value + 1. From 1 bit
-        // deep through 38 bits deep respectively (counting the sign bit, if
-        // appropriate)
-        //
-        else if self.components_bits[0] <= 37 {
-            self.components_bits[0] + 1
-        }
-        // All other values reserved for ISO use.
-        else {
-            todo!("reserved");
+    }
+
+    /// Signedness of the values
+    ///
+    /// See [components_bits](fn@ImageHeaderBox::components_bits) for the BPC encoding.
+    ///
+    /// This returns true if the components are signed, false if they
+    /// are unsigned or it varies (i.e. is given in the BitsPerComponent box).
+    pub fn values_are_signed(&self) -> bool {
+        if self.components_bits[0] == 255 {
+            false
+        } else {
+            (self.components_bits[0] & 0x80) == 0x80
         }
     }
 

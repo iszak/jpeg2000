@@ -39,8 +39,7 @@ fn test_jp2_file(filename: &str, expected_len: u64) {
     assert_eq!(image_header_box.colourspace_unknown(), 0);
     assert_eq!(image_header_box.intellectual_property(), 0);
     assert_eq!(image_header_box.components_bits(), 16);
-    // TODO: add this API
-    // assert_eq!(image_header_box.values_are_signed(), false);
+    assert_eq!(image_header_box.values_are_signed(), false);
 
     assert!(header_box.bits_per_component_box.is_none());
 

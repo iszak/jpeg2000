@@ -2625,9 +2625,10 @@ impl ContiguousCodestream {
                                 offset: reader.stream_position()? - 2,
                             }
                             .into());
+                        } else {
+                            // ITU-T H.800 or ISO/IEC 15444-16 2019, Section A.8.2
+                            // Empty marker, not even the length.
                         }
-                        // A.8.2
-                        todo!();
                     }
                     // delimiting markers
                     MARKER_SYMBOL_EOC => {

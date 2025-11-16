@@ -53,7 +53,7 @@ not started.
 - Packed packet headers, main header PPM A.7.4 (10%)
 - Packed packet headers, tile-part header PPM A.7.5 (15%)
 - Start of packet SOP A.8.1 (0%)
-- End of packet header EPH A.8.2 (0%)
+- End of packet header EPH A.8.2 (100%)
 - Component registration CRG A.9.1 (90%)
 - Comment COM A.9.2 (90%)
 

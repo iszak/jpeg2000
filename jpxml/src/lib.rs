@@ -442,32 +442,32 @@ fn encode_capture_resolution_box<W: io::Write>(
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:vert_num>",
         capture_resolution_box.vertical_capture_grid_resolution_numerator()
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:vert_den>",
         capture_resolution_box.vertical_capture_grid_resolution_denominator()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:hori_num>",
         capture_resolution_box.horizontal_capture_grid_resolution_numerator()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:hori_den>",
         capture_resolution_box.horizontal_capture_grid_resolution_denominator()
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:vert_exp>",
         capture_resolution_box.vertical_capture_grid_resolution_exponent()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:hori_exp>",
         capture_resolution_box.horizontal_capture_grid_resolution_exponent()
     )?;
     writer.write_all(b"    </xjp:resc>\n")?;
@@ -486,32 +486,32 @@ fn encode_default_display_resolution_box<W: io::Write>(
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_num length=\"2\" type=\"integer\">{}</xjp:vert_num>",
         default_display_resolution_box.vertical_display_grid_resolution_numerator()
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_den length=\"2\" type=\"integer\">{}</xjp:vert_den>",
         default_display_resolution_box.vertical_display_grid_resolution_denominator()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_num length=\"2\" type=\"integer\">{}</xjp:hori_num>",
         default_display_resolution_box.horizontal_display_grid_resolution_numerator()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_den length=\"2\" type=\"integer\">{}</xjp:hori_den>",
         default_display_resolution_box.horizontal_display_grid_resolution_denominator()
     )?;
     writeln!(
         writer,
-        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:vert_exp length=\"1\" type=\"integer\">{}</xjp:vert_exp>",
         default_display_resolution_box.vertical_display_grid_resolution_exponent()
     )?;
     writeln!(
         writer,
-        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:id>",
+        "      <xjp:hori_exp length=\"1\" type=\"integer\">{}</xjp:hori_exp>",
         default_display_resolution_box.horizontal_display_grid_resolution_exponent()
     )?;
 
@@ -631,12 +631,12 @@ fn encode_coding_style_parameters<W: io::Write>(
     )?;
     writeln!(
         writer,
-        "        <xjp:style>{}</yjp:style>",
+        "        <xjp:style>{}</xjp:style>",
         coding_style_parameters.code_block_style()
     )?;
     writeln!(
         writer,
-        "        <xjp:wavelet>{:?}</yjp:wavelet>",
+        "        <xjp:wavelet>{:?}</xjp:wavelet>",
         coding_style_parameters.transformation()
     )?;
 
@@ -709,12 +709,12 @@ fn encode_qcd<W: io::Write>(
     writeln!(writer, "    <xjp:QCD>",)?;
     writeln!(
         writer,
-        "      <xjp:Sqcd>{}<xjp:Sqcd>",
+        "      <xjp:Sqcd>{}</xjp:Sqcd>",
         segment.quantization_style_u8()
     )?;
 
     for value in segment.quantization_values().iter() {
-        writeln!(writer, "      <xjp:SPqcd>{}<xjp:SPqcd>", value)?;
+        writeln!(writer, "      <xjp:SPqcd>{}</xjp:SPqcd>", value)?;
     }
     writeln!(writer, "    </xjp:QCD>",)?;
 

@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufReader,path::Path};
 
-use jp2::{JBox as _, Methods, decode_jp2};
+use jp2::{JBox as _, ColourSpecificationMethods, decode_jp2};
 
 #[test]
 fn test_hazard() {
@@ -47,7 +47,7 @@ fn test_jp2_file(filename: &str, expected_len: u64) {
     let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
     assert_eq!(
         colour_specification_box.method(),
-        Methods::EnumeratedColourSpace
+        ColourSpecificationMethods::EnumeratedColourSpace
     );
     assert_eq!(colour_specification_box.precedence(), 0);
     assert_eq!(colour_specification_box.colourspace_approximation(), 0u8);

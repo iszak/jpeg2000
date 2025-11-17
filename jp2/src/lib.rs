@@ -1470,31 +1470,30 @@ const METHOD_ENUMERATED_COLOUR_SPACE: Method = [1];
 const METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE: Method = [2];
 
 #[derive(Debug, PartialEq)]
-// TODO: possibly change this name to something more descriptive
-pub enum Methods {
+pub enum ColourSpecificationMethods {
     EnumeratedColourSpace,
     RestrictedICCProfile,
     Reserved { value: Method },
 }
 
-impl fmt::Display for Methods {
+impl fmt::Display for ColourSpecificationMethods {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Methods::EnumeratedColourSpace => write!(f, "{}", METHOD_ENUMERATED_COLOUR_SPACE[0]),
-            Methods::RestrictedICCProfile => {
+            ColourSpecificationMethods::EnumeratedColourSpace => write!(f, "{}", METHOD_ENUMERATED_COLOUR_SPACE[0]),
+            ColourSpecificationMethods::RestrictedICCProfile => {
                 write!(f, "{}", METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE[0])
             }
-            Methods::Reserved { value } => write!(f, "{}", value[0]),
+            ColourSpecificationMethods::Reserved { value } => write!(f, "{}", value[0]),
         }
     }
 }
 
-impl Methods {
-    fn new(value: [u8; 1]) -> Methods {
+impl ColourSpecificationMethods {
+    fn new(value: [u8; 1]) -> ColourSpecificationMethods {
         match value {
-            METHOD_ENUMERATED_COLOUR_SPACE => Methods::EnumeratedColourSpace,
-            METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE => Methods::RestrictedICCProfile,
-            value => Methods::Reserved { value },
+            METHOD_ENUMERATED_COLOUR_SPACE => ColourSpecificationMethods::EnumeratedColourSpace,
+            METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE => ColourSpecificationMethods::RestrictedICCProfile,
+            value => ColourSpecificationMethods::Reserved { value },
         }
     }
 }
@@ -1558,8 +1557,8 @@ impl ColourSpecificationBox {
     // This field is encoded as a 1-byte unsigned integer.
     // The value of this field shall be 1 or 2.
     //
-    pub fn method(&self) -> Methods {
-        Methods::new(self.method)
+    pub fn method(&self) -> ColourSpecificationMethods {
+        ColourSpecificationMethods::new(self.method)
     }
 
     // Precedence.
@@ -1652,7 +1651,7 @@ impl JBox for ColourSpecificationBox {
             // If the value of the METH field is 1, then the EnumCS shall exist
             // in this box immediately following the APPROX field, and the
             // EnumCS field shall be the last field in this box
-            Methods::EnumeratedColourSpace => {
+            ColourSpecificationMethods::EnumeratedColourSpace => {
                 // TODO: Validate this box exists if METH field is 1 and is
                 // immediately following the APPROX field and the last field.
                 reader.read_exact(&mut self.enumerated_colour_space)?;
@@ -1677,7 +1676,7 @@ impl JBox for ColourSpecificationBox {
             // negative sample values of signed components may be clipped to zero before processing the image data through the profile.
             //
             // If the value of METH is 2, then the PROFILE field shall immediately follow the APPROX field and the PROFILE field shall be the last field in the box.
-            Methods::RestrictedICCProfile => {
+            ColourSpecificationMethods::RestrictedICCProfile => {
                 let mut restricted_icc_profile: Vec<u8> = vec![0; self.length as usize - 3];
 
                 reader.read_exact(&mut restricted_icc_profile)?;
@@ -1686,7 +1685,7 @@ impl JBox for ColourSpecificationBox {
 
             // Reserved for other ISO use. If the value of METH is not 1 or 2, there may be fields in this box following the APPROX field, and a conforming JP2 reader shall ignore the
             // entire Colour Specification box.
-            Methods::Reserved { value } => {
+            ColourSpecificationMethods::Reserved { value } => {
                 debug!("Reserved method {}", value[0]);
             }
         }

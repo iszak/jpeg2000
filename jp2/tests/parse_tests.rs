@@ -1,6 +1,6 @@
-use std::{fs::File, io::BufReader,path::Path};
+use std::{fs::File, io::BufReader, path::Path};
 
-use jp2::{JBox as _, ColourSpecificationMethods, decode_jp2};
+use jp2::{decode_jp2, ColourSpecificationMethods, JBox as _};
 
 #[test]
 fn test_hazard() {

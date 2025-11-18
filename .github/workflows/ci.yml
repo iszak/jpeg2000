@@ -18,8 +18,24 @@ jobs:
           - beta
           - nightly
     steps:
-      - uses: actions/checkout@v4
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-      - run: cargo build --verbose
-      - run: cargo test --verbose --workspace
-  
+      - name: Fetch Repository
+        uses: actions/checkout@v5
+      - name: Install toolchain
+        run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Check build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose --workspace
+
+  format_lint:
+    name: Check formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Repository
+        uses: actions/checkout@v5
+      - name: Install toolchain with rustfmt
+        run: rustup update stable && rustup default stable && rustup component add rustfmt
+      - name: Check rust format
+        run: cargo fmt --all --check
+

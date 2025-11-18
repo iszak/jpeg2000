@@ -375,8 +375,7 @@ impl JBox for FileTypeBox {
 
         // A file shall have at least one CL field in the File Type box, and shall contain the value‘jp2\040’ in one of the CL fields in the File Type box, and all conforming readers shall properly interpret all files with ‘jp2\040’ in one of the CL fields.
         // Other values of the Compatibility list field are reserved for ISO use.
-        if !self.compatibility_list.contains(&BRAND_JP2)
-        {
+        if !self.compatibility_list.contains(&BRAND_JP2) {
             return Err(JP2Error::NotCompatible {
                 compatibility_list: self.compatibility_list().clone(),
             }
@@ -386,7 +385,6 @@ impl JBox for FileTypeBox {
         Ok(())
     }
 }
-
 
 // I.5.3
 //
@@ -1479,7 +1477,9 @@ pub enum ColourSpecificationMethods {
 impl fmt::Display for ColourSpecificationMethods {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ColourSpecificationMethods::EnumeratedColourSpace => write!(f, "{}", METHOD_ENUMERATED_COLOUR_SPACE[0]),
+            ColourSpecificationMethods::EnumeratedColourSpace => {
+                write!(f, "{}", METHOD_ENUMERATED_COLOUR_SPACE[0])
+            }
             ColourSpecificationMethods::RestrictedICCProfile => {
                 write!(f, "{}", METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE[0])
             }
@@ -1492,7 +1492,9 @@ impl ColourSpecificationMethods {
     fn new(value: [u8; 1]) -> ColourSpecificationMethods {
         match value {
             METHOD_ENUMERATED_COLOUR_SPACE => ColourSpecificationMethods::EnumeratedColourSpace,
-            METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE => ColourSpecificationMethods::RestrictedICCProfile,
+            METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE => {
+                ColourSpecificationMethods::RestrictedICCProfile
+            }
             value => ColourSpecificationMethods::Reserved { value },
         }
     }

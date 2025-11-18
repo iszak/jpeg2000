@@ -64,10 +64,8 @@ fn test_blue() {
     );
     // SPcod
     assert_eq!(cod.coding_style_parameters().no_decomposition_levels(), 5);
-    // TODO: fix this
-    // assert_eq!(cod.coding_style_parameters().code_block_width(), 64);
-    // TODO: fix this
-    // assert_eq!(cod.coding_style_parameters().code_block_height(), 64);
+    assert_eq!(cod.coding_style_parameters().code_block_width(), 64);
+    assert_eq!(cod.coding_style_parameters().code_block_height(), 64);
     assert_eq!(cod.coding_style_parameters().code_block_style(), 0);
     assert_eq!(
         cod.coding_style_parameters().coding_block_styles(),

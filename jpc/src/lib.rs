@@ -587,12 +587,21 @@ impl CodingStyleParameters {
         self.no_decomposition_levels[0]
     }
 
-    pub fn code_block_width(&self) -> u8 {
-        self.code_block_width[0]
+    // A.18
+    //
+    // Code-block width and height exponent offset value xcb = value + 2 or ycb = value + 2.
+    //
+    // TODO: validate
+    // The code-block width and height are limited to powers of two with the minimum size being 2^2 and the maximum
+    // being 2^10.
+    //
+    // Furthermore, the code-block size is restricted so that xcb + ycb <= 12.
+    pub fn code_block_width(&self) -> u16 {
+        2u16.pow(((self.code_block_width[0] & 0b00001111) + 2) as u32)
     }
 
-    pub fn code_block_height(&self) -> u8 {
-        self.code_block_height[0]
+    pub fn code_block_height(&self) -> u16 {
+        2u16.pow(((self.code_block_height[0] & 0b00001111) + 2) as u32)
     }
 
     pub fn code_block_style(&self) -> u8 {

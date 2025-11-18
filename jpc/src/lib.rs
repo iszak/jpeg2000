@@ -1289,7 +1289,7 @@ impl QuantizationStyle {
         let value = byte << 3 >> 3;
 
         // 000x xxxx to 111x xxxx, Number of guard bits: 0 to 7
-        let guard = u8::from_be(value >> 5);
+        let guard = u8::from_be(byte >> 5);
 
         match value {
             // No quantization

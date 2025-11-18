@@ -222,7 +222,7 @@ impl CodingBlockStyle {
             coding_block_styles.push(CodingBlockStyle::NoSelectiveArithmeticCodingBypass);
         }
 
-        if value & 0b_0000_0010 !=0  {
+        if value & 0b_0000_0010 != 0 {
             coding_block_styles.push(CodingBlockStyle::ResetContextProbabilities);
         } else {
             coding_block_styles.push(CodingBlockStyle::NoResetOfContextProbabilities);
@@ -1813,16 +1813,24 @@ impl ContiguousCodestream {
 
             // Ttlm
             if parameter_sizes.contains(&TilePartParameterSize::Ttlm8Bit) {
-                reader.take(1).read_exact(&mut tile_part_length.tile_index)?;
+                reader
+                    .take(1)
+                    .read_exact(&mut tile_part_length.tile_index)?;
             } else if parameter_sizes.contains(&TilePartParameterSize::Ttlm16Bit) {
-                reader.take(2).read_exact(&mut tile_part_length.tile_index)?;
+                reader
+                    .take(2)
+                    .read_exact(&mut tile_part_length.tile_index)?;
             }
 
             // Ptlm
             if parameter_sizes.contains(&TilePartParameterSize::Ptlm16Bit) {
-                reader.take(2).read_exact(&mut tile_part_length.tile_length)?;
+                reader
+                    .take(2)
+                    .read_exact(&mut tile_part_length.tile_length)?;
             } else if parameter_sizes.contains(&TilePartParameterSize::Ptlm32Bit) {
-                reader.take(4).read_exact(&mut tile_part_length.tile_length)?;
+                reader
+                    .take(4)
+                    .read_exact(&mut tile_part_length.tile_length)?;
             }
             segment.tile_part_lengths.push(tile_part_length);
         }

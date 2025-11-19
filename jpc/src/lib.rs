@@ -1276,9 +1276,9 @@ impl CommentMarkerSegment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum QuantizationStyle {
-    No,
+    No { guard: u8 },
     ScalarDerived { guard: u8 },
     ScalarExpounded { guard: u8 },
     Reserved { value: u8 },
@@ -1293,7 +1293,7 @@ impl QuantizationStyle {
 
         match value {
             // No quantization
-            0b0000_0000 => QuantizationStyle::No,
+            0b0000_0000 => QuantizationStyle::No { guard },
 
             // Scalar derived (values signalled for NLLL subband only).
             0b0000_0001 => QuantizationStyle::ScalarDerived { guard },
@@ -1322,8 +1322,8 @@ impl QuantizationValue {
 
     fn exponent(&self) -> u8 {
         match &self {
-            QuantizationValue::Reversible { value } => u8::from_be_bytes([value[0] >> 3 << 3]),
-            QuantizationValue::Irreversible { value } => u8::from_be_bytes([value[0] >> 3 << 3]),
+            QuantizationValue::Reversible { value } => u8::from_be_bytes([value[0] >> 3]),
+            QuantizationValue::Irreversible { value } => u8::from_be_bytes([value[0] >> 3]),
         }
     }
 
@@ -1377,6 +1377,10 @@ impl QuantizationDefaultMarkerSegment {
 
     pub fn quantization_values(&self) -> Vec<u16> {
         self.values.iter().map(|e| e.value()).collect()
+    }
+
+    pub fn quantization_exponents(&self) -> Vec<u8> {
+        self.values.iter().map(|e| e.exponent()).collect()
     }
 }
 
@@ -1854,7 +1858,7 @@ impl ContiguousCodestream {
         for _ in 0..no_subbands {
             match quantization_style {
                 // Reversible transformation values
-                QuantizationStyle::No => {
+                QuantizationStyle::No { guard: _ } => {
                     let mut value: [u8; 1] = [0; 1];
                     reader.read_exact(&mut value)?;
 
@@ -1890,7 +1894,7 @@ impl ContiguousCodestream {
         reader.read_exact(&mut segment.quantization_style)?;
 
         let no_decomposition_levels = match segment.quantization_style() {
-            QuantizationStyle::No => (segment.length() - 4) / 3,
+            QuantizationStyle::No { guard: _ } => (segment.length() - 4) / 3,
             QuantizationStyle::ScalarDerived { guard: _ } => 5,
             QuantizationStyle::ScalarExpounded { guard: _ } => (segment.length() - 5) / 6,
             _ => panic!(),
@@ -1926,7 +1930,7 @@ impl ContiguousCodestream {
         reader.read_exact(&mut segment.quantization_style)?;
 
         let mut no_decomposition_levels = match segment.quantization_style() {
-            QuantizationStyle::No => (segment.length() - 5) / 3,
+            QuantizationStyle::No { guard: _ } => (segment.length() - 5) / 3,
             QuantizationStyle::ScalarDerived { guard: _ } => 6,
             QuantizationStyle::ScalarExpounded { guard: _ } => (segment.length() - 6) / 6,
             _ => panic!(),

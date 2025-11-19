@@ -285,29 +285,26 @@ impl CodingStyleDefault {
     fn new(value: u8) -> Vec<CodingStyleDefault> {
         let mut coding_styles: Vec<CodingStyleDefault> = vec![];
 
-        if value & 0b_0000_0001 > 0 {
+        if value & 0b11111001 == 0 {
             coding_styles.push(CodingStyleDefault::EntropyCoderWithPrecinctsDefined);
-        } else {
+        } else if value & 0b11111001 == 0b0001 {
             coding_styles.push(CodingStyleDefault::EntropyCoderWithPrecincts);
         }
 
-        if value & 0b_0000_0010 > 0 {
-            coding_styles.push(CodingStyleDefault::SOP);
-        } else {
+        if value & 0b11111010 == 0 {
             coding_styles.push(CodingStyleDefault::NoSOP);
+        } else if value & 0b11111010 == 0b10 {
+            coding_styles.push(CodingStyleDefault::SOP);
         }
 
-        if value & 0b_0000_0100 > 0 {
-            coding_styles.push(CodingStyleDefault::EPH);
-        } else {
+        if value & 0b11111100 == 0 {
             coding_styles.push(CodingStyleDefault::NoEPH);
+        } else if value & 0b11111100 == 0b0100 {
+            coding_styles.push(CodingStyleDefault::EPH);
         }
 
-        if value != 0 {
-            coding_styles.push(CodingStyleDefault::Reserved {
-                value: value >> 3 << 3,
-            });
-        }
+        // TODO implement ISO/IEC 15444-1 Table A.13 reservered
+        // TODO implement ISO/IEC 15444-2 Table A.5 extensions
 
         coding_styles
     }

@@ -1,8 +1,8 @@
 use std::{fs::File, io::BufReader, path::Path};
 
 use jpc::{
-    decode_jpc, CodingBlockStyle, CommentRegistrationValue, MultipleComponentTransformation,
-    ProgressionOrder, TransformationFilter,
+    decode_jpc, CodingBlockStyle, CodingStyleDefault, CommentRegistrationValue,
+    MultipleComponentTransformation, ProgressionOrder, TransformationFilter,
 };
 
 #[test]
@@ -56,6 +56,14 @@ fn test_eph() {
     let cod = header.coding_style_marker_segment();
     // Scod
     assert_eq!(cod.coding_style(), 4);
+    assert_eq!(
+        cod.coding_styles(),
+        vec![
+            CodingStyleDefault::EntropyCoderWithPrecinctsDefined,
+            CodingStyleDefault::NoSOP,
+            CodingStyleDefault::EPH
+        ]
+    );
     // SGcod
     assert_eq!(cod.progression_order(), ProgressionOrder::RLLCPP);
     assert_eq!(cod.no_layers(), 1);

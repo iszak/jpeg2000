@@ -88,3 +88,38 @@ Not started, see Annex G
 - add tests
 - add benchmarks
 - add fuzzing
+
+
+## Quick Start (for Contributors)
+
+### Clone, Build, Test
+
+```bash
+git clone https://github.com/iszak/jpeg2000.git
+cd jpeg2000
+cargo build
+cargo test --workspace
+```
+
+### Code Quality
+
+Use rustfmt and clippy.
+```bash
+cargo fmt
+cargo clippy -- -D warnings
+```
+
+### Documentation
+
+Documentation could be improved.
+
+- Use `cargo doc --open` to preview documentation locally
+
+### Testing
+
+Reference decoding can be obtained by using other jpeg 2000 parsing tools, such as opj_dump from [openjpeg](https://www.openjpeg.org/) and [jpylyzer](https://jpylyzer.openpreservation.org/).
+
+```
+opj_dump -v -i samples/file1.jp2
+jpylyzer --verbose samples/file1.jp2
+```

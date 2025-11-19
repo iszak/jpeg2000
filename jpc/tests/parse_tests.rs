@@ -2,7 +2,7 @@ use std::{fs::File, io::BufReader, path::Path};
 
 use jpc::{
     decode_jpc, CodingBlockStyle, CommentRegistrationValue, MultipleComponentTransformation,
-    ProgressionOrder, TransformationFilter,
+    ProgressionOrder, QuantizationStyle, TransformationFilter,
 };
 
 #[test]
@@ -91,7 +91,14 @@ fn test_blue() {
     // COC
     assert!(header.coding_style_component_segment().is_empty());
 
-    // TODO: QCD
+    // QCD
+    let qcd = header.quantization_default_marker_segment();
+    assert_eq!(qcd.length(), 19);
+    assert_eq!(qcd.quantization_style(), QuantizationStyle::No { guard: 2 }); // style = No Quant
+    assert_eq!(
+        qcd.quantization_exponents(),
+        vec![8, 9, 9, 10, 9, 9, 10, 9, 9, 10, 9, 9, 10, 9, 9, 10]
+    );
 
     // QCC
     assert!(header.quantization_component_segments().is_empty());

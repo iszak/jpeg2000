@@ -85,9 +85,15 @@ fn test_eph() {
         TransformationFilter::Reversible
     );
 
-    // TODO: fix this
-    // assert_eq!(cod.coding_style_parameters().has_precinct_size(), true);
-    // assert!(cod.coding_style_parameters().precinct_sizes().is_some());
+    assert_eq!(
+        cod.coding_style_parameters().has_defined_precinct_size(),
+        false
+    );
+    assert_eq!(
+        cod.coding_style_parameters().has_default_precinct_size(),
+        true
+    );
+    assert!(cod.coding_style_parameters().precinct_sizes().is_some());
 
     // COC
     assert!(header.coding_style_component_segment().is_empty());

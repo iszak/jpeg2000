@@ -1867,15 +1867,17 @@ impl JBox for IntellectualPropertyBox {
     }
 }
 
-// I.7.1
-//
-// XML box
-//
-// An XML box contains vendor specific information (in XML format) other than
-// the information contained within boxes defined.
-//
-// There may be multiple XML boxes within the file, and those boxes may be found
-// anywhere in the file except before the File Type box.
+/// XML box
+///
+/// An XML box contains vendor specific information (in XML format) other than
+/// the information contained within boxes defined.
+///
+/// There may be multiple XML boxes within the file, and those boxes may be found
+/// anywhere in the file except before the File Type box.
+///
+/// A potential use for this is embedding vendor or domain-specific metadata.
+///
+/// See ISO/IEC 15444-1:2024 Section I.7.1 for more details on this box.
 #[derive(Debug, Default)]
 pub struct XMLBox {
     length: u64,
@@ -1884,8 +1886,9 @@ pub struct XMLBox {
 }
 
 impl XMLBox {
+    /// Get the XML body as a UTF-8 string.
     pub fn format(&self) -> String {
-        format!("{:?}", str::from_utf8(&self.xml).unwrap())
+        str::from_utf8(&self.xml).unwrap().to_string()
     }
 }
 
@@ -1913,15 +1916,15 @@ impl JBox for XMLBox {
     }
 }
 
-// I.7.2
-//
-// UUID box
-//
-// A UUID box contains vendor specific information other than the information
-// contained within boxes defined.
-//
-// There may be multiple UUID boxes within the file, and those boxes may be
-// found anywhere in the file except before the File Type box.
+/// UUID box.
+///
+/// A UUID box contains vendor specific information other than the information
+/// contained within boxes defined.
+///
+/// There may be multiple UUID boxes within the file, and those boxes may be
+/// found anywhere in the file except before the File Type box.
+///
+/// See ISO/IEC 15444-1:2024 Section I.7.2 for more details on this box.
 #[derive(Debug, Default)]
 pub struct UUIDBox {
     length: u64,
@@ -1931,9 +1934,20 @@ pub struct UUIDBox {
 }
 
 impl UUIDBox {
+    /// Get the UUID for the box.
+    ///
+    /// This field contains a 16-byte UUID as specified by ISO/IEC 11578. The
+    /// value of this UUID specifies the format of the vendor-specific information
+    /// stored in the DATA field and the interpretation of that information.
     pub fn uuid(&self) -> &[u8; 16] {
         &self.uuid
     }
+
+    /// Get the vendor-specific information.
+    ///
+    /// This field contains vendor-specific information. The format of this information
+    /// is defined outside of the scope of ISO/IEC 15444-1, but is indicated by the
+    /// value of the UUID field.
     pub fn data(&self) -> &Vec<u8> {
         &self.data
     }

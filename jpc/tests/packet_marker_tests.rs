@@ -1,8 +1,8 @@
 use std::{fs::File, io::BufReader, path::Path};
 
 use jpc::{
-    decode_jpc, CodingBlockStyle, CommentRegistrationValue, MultipleComponentTransformation,
-    ProgressionOrder, TransformationFilter,
+    decode_jpc, CodingBlockStyle, CodingStyleDefault, CommentRegistrationValue,
+    MultipleComponentTransformation, ProgressionOrder, TransformationFilter,
 };
 
 #[test]
@@ -56,6 +56,14 @@ fn test_eph() {
     let cod = header.coding_style_marker_segment();
     // Scod
     assert_eq!(cod.coding_style(), 4);
+    assert_eq!(
+        cod.coding_styles(),
+        vec![
+            CodingStyleDefault::EntropyCoderWithPrecinctsDefined,
+            CodingStyleDefault::NoSOP,
+            CodingStyleDefault::EPH
+        ]
+    );
     // SGcod
     assert_eq!(cod.progression_order(), ProgressionOrder::RLLCPP);
     assert_eq!(cod.no_layers(), 1);
@@ -65,8 +73,8 @@ fn test_eph() {
     );
     // SPcod
     assert_eq!(cod.coding_style_parameters().no_decomposition_levels(), 0);
-    // assert_eq!(cod.coding_style_parameters().code_block_width(), 64);
-    // assert_eq!(cod.coding_style_parameters().code_block_height(), 64);
+    assert_eq!(cod.coding_style_parameters().code_block_width(), 64);
+    assert_eq!(cod.coding_style_parameters().code_block_height(), 64);
     assert_eq!(cod.coding_style_parameters().code_block_style(), 0);
     assert_eq!(
         cod.coding_style_parameters().coding_block_styles(),
@@ -85,9 +93,15 @@ fn test_eph() {
         TransformationFilter::Reversible
     );
 
-    // TODO: fix this
-    // assert_eq!(cod.coding_style_parameters().has_precinct_size(), true);
-    // assert!(cod.coding_style_parameters().precinct_sizes().is_some());
+    assert_eq!(
+        cod.coding_style_parameters().has_defined_precinct_size(),
+        false
+    );
+    assert_eq!(
+        cod.coding_style_parameters().has_default_precinct_size(),
+        true
+    );
+    assert!(cod.coding_style_parameters().precinct_sizes().is_some());
 
     // COC
     assert!(header.coding_style_component_segment().is_empty());

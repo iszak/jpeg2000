@@ -285,29 +285,26 @@ impl CodingStyleDefault {
     fn new(value: u8) -> Vec<CodingStyleDefault> {
         let mut coding_styles: Vec<CodingStyleDefault> = vec![];
 
-        if value & 0b_0000_0001 > 0 {
+        if value & 0b11111001 == 0 {
             coding_styles.push(CodingStyleDefault::EntropyCoderWithPrecinctsDefined);
-        } else {
+        } else if value & 0b11111001 == 0b0001 {
             coding_styles.push(CodingStyleDefault::EntropyCoderWithPrecincts);
         }
 
-        if value & 0b_0000_0010 > 0 {
-            coding_styles.push(CodingStyleDefault::SOP);
-        } else {
+        if value & 0b11111010 == 0 {
             coding_styles.push(CodingStyleDefault::NoSOP);
+        } else if value & 0b11111010 == 0b10 {
+            coding_styles.push(CodingStyleDefault::SOP);
         }
 
-        if value & 0b_0000_0100 > 0 {
-            coding_styles.push(CodingStyleDefault::EPH);
-        } else {
+        if value & 0b11111100 == 0 {
             coding_styles.push(CodingStyleDefault::NoEPH);
+        } else if value & 0b11111100 == 0b0100 {
+            coding_styles.push(CodingStyleDefault::EPH);
         }
 
-        if value != 0 {
-            coding_styles.push(CodingStyleDefault::Reserved {
-                value: value >> 3 << 3,
-            });
-        }
+        // TODO implement ISO/IEC 15444-1 Table A.13 reservered
+        // TODO implement ISO/IEC 15444-2 Table A.5 extensions
 
         coding_styles
     }
@@ -616,13 +613,18 @@ impl CodingStyleParameters {
         TransformationFilter::new(self.transformation)
     }
 
-    pub fn has_precinct_size(&self) -> bool {
-        self.coding_style[0] << 7 >> 7 != 0b_0000_0000
+    pub fn has_defined_precinct_size(&self) -> bool {
+        self.coding_style[0] & 0b1001 == 1
+    }
+
+    pub fn has_default_precinct_size(&self) -> bool {
+        self.coding_style[0] & 0b1001 == 0
     }
 
     pub fn precinct_sizes(&self) -> Option<Vec<CodingStyleParametersPrecinctSize>> {
-        if self.has_precinct_size() {
-            return None;
+        // If entropy coder, precincts with PPx = 15 and PPy = 15
+        if self.has_default_precinct_size() {
+            return Some(vec![CodingStyleParametersPrecinctSize { value: 255 }]);
         }
 
         Some(
@@ -1616,9 +1618,9 @@ impl ContiguousCodestream {
         reader.read_exact(&mut coding_style_parameters.code_block_style)?;
         reader.read_exact(&mut coding_style_parameters.transformation)?;
 
-        // If Scod or Scoc = xxxx xxx0, this parameter is not present,
-        // otherwise this indicates precinct width and height.
-        if coding_style_parameters.has_precinct_size() {
+        if coding_style_parameters.has_defined_precinct_size() {
+            // The first parameter (8 bits) corresponds to the N<sub>L</sub>LL sub-band.
+            // Each successive parameter corresponds to each successive resolution level in order.
             coding_style_parameters.precinct_size =
                 vec![0; coding_style_parameters.no_decomposition_levels() as usize + 1];
             reader.read_exact(&mut coding_style_parameters.precinct_size)?;

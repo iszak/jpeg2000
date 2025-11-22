@@ -163,14 +163,18 @@ impl BoxTypes {
 
 type BoxType = [u8; 4];
 
-// The building-block of the JP2 file format is called a box.
-//
-// All information contained within the JP2 file is encapsulated in boxes.
-//
-// This Recommendation | International Standard defines several types of boxes;
-// the definition of each specific box type defines the kinds of information
-// that may be found within a box of that type. Some boxes will be defined to
-// contain other boxes.
+/// JPEG 2000 box trait.
+///
+/// The building-block of the JP2 file format is called a box.
+///
+/// All information contained within the JP2 file is encapsulated in boxes.
+///
+/// ISO/IEC 15444-1 / ITU T-800 defines several types of boxes;
+/// the definition of each specific box type defines the kinds of information
+/// that may be found within a box of that type. Some boxes will be defined to
+/// contain other boxes.
+///
+/// For more information, see ISO/IEC 15444-1 / ITU T-800 Appendix I.4.
 pub trait JBox {
     fn identifier(&self) -> BoxType;
     fn length(&self) -> u64;
@@ -182,30 +186,30 @@ pub trait JBox {
     ) -> Result<(), Box<dyn error::Error>>;
 }
 
-// I.5.1
-//
-// JPEG 2000 Signature box
-//
-// The Signature box identifies that the format of this file was defined by the
-// JPEG 2000 Recommendation | International Standard, as well as provides a
-// small amount of information which can help determine the validity of the rest
-// of the file.
-//
-// The Signature box shall be the first box in the file, and all files shall
-// contain one and only one Signature box.
-
-// For file verification purposes, this box can be considered a fixed-length
-// 12-byte string which shall have the value: 0x0000 000C 6A50 2020 0D0A 870A.
-
-// The combination of the particular type and contents for this box enable an
-// application to detect a common set of file transmission errors.
-//
-// - The CR-LF sequence in the contents catches bad file transfers that alter
-// newline sequences.
-// - The control-Z character in the type stops file display under MS-DOS.
-// - The final linefeed checks for the inverse of the CR-LF translation problem.
-// - The third character of the box contents has its high-bit set to catch bad
-// file transfers that clear bit 7
+/// JPEG 2000 Signature box.
+///
+/// The Signature box identifies that the format of this file was defined by the
+/// JPEG 2000 Recommendation | International Standard, as well as provides a
+/// small amount of information which can help determine the validity of the rest
+/// of the file.
+///
+/// The Signature box shall be the first box in the file, and all files shall
+/// contain one and only one Signature box.
+///
+/// For file verification purposes, this box can be considered a fixed-length
+/// 12-byte string which shall have the value: 0x0000 000C 6A50 2020 0D0A 870A.
+///
+/// The combination of the particular type and contents for this box enable an
+/// application to detect a common set of file transmission errors.
+///
+/// - The CR-LF sequence in the contents catches bad file transfers that alter
+///   newline sequences.
+/// - The control-Z character in the type stops file display under MS-DOS.
+/// - The final linefeed checks for the inverse of the CR-LF translation problem.
+/// - The third character of the box contents has its high-bit set to catch bad
+///   file transfers that clear bit 7.
+///
+/// For more information, see ISO/IEC 15444-1 / ITU T-800 Appendix I.5.1.
 #[derive(Debug, Default)]
 pub struct SignatureBox {
     length: u64,
@@ -257,21 +261,21 @@ impl JBox for SignatureBox {
 
 type CompatibilityList = Vec<[u8; 4]>;
 
-// I.5.2
-//
-// File Type box
-//
-// The File Type box completely defines all of the contents of this file, as
-// well as a separate list of readers with which this file is compatible, and
-// thus the file can be properly interpreted within the scope of that other
-// standard.
-//
-// This box shall immediately follow the Signature box.
-//
-// All files shall contain one and only one File Type box
-//
-// This differentiates between the standard which completely describes the file,
-// from other standards that interpret a subset of the file.
+/// File Type box.
+///
+/// The File Type box completely defines all of the contents of this file, as
+/// well as a separate list of readers with which this file is compatible, and
+/// thus the file can be properly interpreted within the scope of that other
+/// standard.
+///
+/// This box shall immediately follow the Signature box.
+///
+/// All files shall contain one and only one File Type box
+///
+/// This differentiates between the standard which completely describes the file,
+/// from other standards that interpret a subset of the file.
+///
+/// For more information, see ISO/IEC 15444-1 / ITU T-800 Appendix I.5.2.
 #[derive(Debug, Default)]
 pub struct FileTypeBox {
     length: u64,
@@ -282,10 +286,10 @@ pub struct FileTypeBox {
 }
 
 impl FileTypeBox {
-    // Brand
-    //
-    // This field specifies the Recommendation | International Standard which
-    // completely defines this file.
+    /// Brand.
+    ///
+    /// This field specifies the Recommendation | International Standard which
+    /// completely defines this file.
     //
     // This field is specified by a four byte string of ISO 646 characters.
     //
@@ -302,28 +306,27 @@ impl FileTypeBox {
         str::from_utf8(&self.brand).unwrap()
     }
 
-    // Minor version
-    //
-    // This parameter defines the minor version number of this JP2 specification
-    // for which the file complies.
-    //
-    // The parameter is defined as a 4-byte big endian unsigned integer.
-    //
-    // The value of this field shall be zero.
-    //
-    // However, readers shall continue to parse and interpret this file even if
-    // the value of thisfield is not zero.
+    /// Minor version.
+    ///
+    /// This parameter defines the minor version number of this JP2 specification
+    /// for which the file complies.
+    ///
+    /// The parameter is defined as a 4-byte big endian unsigned integer.
+    ///
+    /// The value of this field shall be zero.
+    ///
+    /// However, readers shall continue to parse and interpret this file even if
+    /// the value of this field is not zero.
     pub fn min_version(&self) -> u32 {
         u32::from_be_bytes(self.min_version)
     }
 
-    // Compatibility list
-    //
-    // This field specifies a code representing this Recommendation |
-    // International Standard, another standard, or a profile of another
-    // standard, to which the file conforms.
-    //
-    // This field is encoded as a four byte string of ISO 646 characters.
+    /// Compatibility list
+    ///
+    /// This field specifies a code representing the standard, or a profile of a
+    /// standard, to which the file conforms.
+    ///
+    /// This field is encoded as a four byte string of ISO 646 characters.
     pub fn compatibility_list(&self) -> Vec<String> {
         self.compatibility_list
             .iter()

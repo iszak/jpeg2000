@@ -2625,9 +2625,18 @@ impl ContiguousCodestream {
                                 offset: reader.stream_position()? - 2,
                             }
                             .into());
+                        } else {
+                            // ITU-T H.800 or ISO/IEC 15444-1 2024, Section A.8.1
+                            let mut buf = [0u8; 2];
+                            reader.read_exact(&mut buf)?;
+                            let lsop = u16::from_be_bytes(buf);
+                            // TODO: if using strict parsing, check length == 4
+                            reader.read_exact(&mut buf)?;
+                            let nsop = u16::from_be_bytes(buf);
+                            // TODO: if using strict parsing, check nsop increment matches packet number,
+                            // even if SOP wasn't present
+                            info!("SOP length {lsop}, sequence number {nsop}");
                         }
-                        // A.8.1
-                        todo!();
                     }
                     MARKER_SYMBOL_EPH => {
                         // If packet headers are not in-bit stream (i.e., PPM or PPT marker segments are used), this
@@ -2649,7 +2658,7 @@ impl ContiguousCodestream {
                             }
                             .into());
                         } else {
-                            // ITU-T H.800 or ISO/IEC 15444-16 2019, Section A.8.2
+                            // ITU-T H.800 or ISO/IEC 15444-1 2024, Section A.8.2
                             // Empty marker, not even the length.
                         }
                     }

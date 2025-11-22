@@ -2626,7 +2626,7 @@ impl ContiguousCodestream {
                             }
                             .into());
                         } else {
-                            // ITU-T H.800 or ISO/IEC 15444-16 2024, Section A.8.1
+                            // ITU-T H.800 or ISO/IEC 15444-1 2024, Section A.8.1
                             let mut buf = [0u8; 2];
                             reader.read_exact(&mut buf)?;
                             let lsop = u16::from_be_bytes(buf);
@@ -2658,7 +2658,7 @@ impl ContiguousCodestream {
                             }
                             .into());
                         } else {
-                            // ITU-T H.800 or ISO/IEC 15444-16 2019, Section A.8.2
+                            // ITU-T H.800 or ISO/IEC 15444-1 2024, Section A.8.2
                             // Empty marker, not even the length.
                         }
                     }

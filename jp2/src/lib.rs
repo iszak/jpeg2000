@@ -1831,25 +1831,33 @@ impl JBox for ResolutionSuperBox {
     }
 }
 
-// I.6
-//
-// Intellectual Property box
-//
-// A box type for a box which is devoted to carrying intellectual property
-// rights information within a JP2 file.
-//
-// Inclusion of this information in a JP2 file is optional for conforming files.
-// The definition of the format of the contents of this box is reserved for ISO.
-//
-// However, the type of this box is defined as a means to allow applications to
-// recognize the existence of IPR information.
-//
-// Use and interpretation of this information is beyond the scope of this.
+/// Intellectual Property box.
+///
+/// A box type for a box which is devoted to carrying intellectual property
+/// rights information within a JP2 file.
+///
+/// Inclusion of this information in a JP2 file is optional for conforming files.
+///
+/// In ISO/IEC 15444-1 / T.800, the definition of the format of the contents of
+/// this box is reserved for ISO.
+///
+/// However, the type of this box is defined as a means to allow applications to
+/// recognize the existence of IPR information.
+///
+/// In ISO/IEC 15444-2 / T.801, the definition of the format of the contents of
+/// this box is given as XML. See ISO/IEC 15444-2 / T.801 Annex N.
 #[derive(Debug, Default)]
-struct IntellectualPropertyBox {
+pub struct IntellectualPropertyBox {
     length: u64,
     offset: u64,
     data: Vec<u8>,
+}
+
+impl IntellectualPropertyBox {
+    /// Get the XML body as a UTF-8 string.
+    pub fn format(&self) -> String {
+        str::from_utf8(&self.data).unwrap().to_string()
+    }
 }
 
 impl JBox for IntellectualPropertyBox {
@@ -2597,6 +2605,7 @@ pub struct JP2File {
     file_type: Option<FileTypeBox>,
     header: Option<HeaderSuperBox>,
     contiguous_codestreams: Vec<ContiguousCodestreamBox>,
+    intellectual_property: Option<IntellectualPropertyBox>,
     xml: Vec<XMLBox>,
     uuid: Vec<UUIDBox>,
 }
@@ -2617,6 +2626,22 @@ impl JP2File {
     pub fn contiguous_codestreams_boxes(&self) -> &Vec<ContiguousCodestreamBox> {
         &self.contiguous_codestreams
     }
+
+    /// Intellectual Property Box associated with this file.
+    ///
+    /// This box contains Intellectual property rights (IPR) related information
+    /// associated with the image such as moral rights, copyrights as well as
+    /// exploitation information.
+    ///
+    /// In ISO/IEC 15444-1 / T.800 the content of this box is reserved to ISO.
+    ///
+    /// In ISO/IEC 15444-2 / T.801 Section N.5.4, the content of this box is
+    /// required to be well formed XML. See Annex N for more detail on the JPX
+    /// file format extended metadata definition and syntax.
+    pub fn intellectual_property_box(&self) -> &Option<IntellectualPropertyBox> {
+        &self.intellectual_property
+    }
+
     pub fn xml_boxes(&self) -> &Vec<XMLBox> {
         &self.xml
     }
@@ -2751,6 +2776,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
 
     let mut header_box_option: Option<HeaderSuperBox> = None;
     let mut contiguous_codestream_boxes: Vec<ContiguousCodestreamBox> = vec![];
+    let mut intellectual_property_option: Option<IntellectualPropertyBox> = None;
 
     let mut xml_boxes: Vec<XMLBox> = vec![];
     let mut uuid_boxes: Vec<UUIDBox> = vec![];
@@ -2803,6 +2829,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                     "IntellectualPropertyBox finish at {:?}",
                     reader.stream_position()
                 );
+                intellectual_property_option = Some(intellectual_property_box);
             }
             BoxTypes::Xml => {
                 let mut xml_box = XMLBox {
@@ -2928,6 +2955,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
         file_type: Some(file_type_box),
         header: header_box_option,
         contiguous_codestreams: contiguous_codestream_boxes,
+        intellectual_property: intellectual_property_option,
         xml: xml_boxes,
         uuid: uuid_boxes,
     };

@@ -907,3 +907,36 @@ fn test_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2File {
 
     boxes
 }
+
+#[test]
+fn test_j2pi() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("j2pi.jp2");
+    let file = File::open(path).expect("file should exist");
+    let mut reader = BufReader::new(file);
+    let result = decode_jp2(&mut reader);
+    assert!(result.is_ok());
+    let boxes = result.unwrap();
+
+    assert!(boxes.header_box().is_some());
+    let header_box = boxes.header_box().as_ref().unwrap();
+    let image_header_box = &header_box.image_header_box;
+    assert_eq!(image_header_box.height(), 2);
+    assert_eq!(image_header_box.width(), 3);
+    assert_eq!(image_header_box.components_num(), 1);
+    assert_eq!(image_header_box.intellectual_property(), 1);
+    assert_eq!(image_header_box.components_bits(), 8);
+    assert_eq!(image_header_box.values_are_signed(), false);
+
+    assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
+
+    assert!(boxes.intellectual_property_box().is_some());
+    let j2ki = boxes.intellectual_property_box().as_ref().unwrap();
+    assert_eq!(j2ki.length(), 469);
+    assert_eq!(j2ki.format(), "<?xml version=\"1.0\"?>\n<!-- markings are for test purposes only, content is public release -->\n<jp:IPR xmlns:jp=\"http://www.jpeg.org/jpx/1.0/xml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<jp:IPR_EXPLOITATION>\n<jp:IPR_USE_RESTRICTION>unclassified</jp:IPR_USE_RESTRICTION>\n<jp:IPR_MGMT_SYS>\n<jp:IPR_MGMT_TYPE>SWE</jp:IPR_MGMT_TYPE>\n</jp:IPR_MGMT_SYS>\n<jp:IPR_PROTECTION>SWE;FRA;USA;GBR;ARE;ZAF;DEU;ITA;CZE</jp:IPR_PROTECTION>\n</jp:IPR_EXPLOITATION>\n</jp:IPR>");
+
+    assert_eq!(boxes.xml_boxes().len(), 0);
+
+    assert_eq!(boxes.uuid_boxes().len(), 0);
+}

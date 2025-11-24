@@ -1470,10 +1470,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<ImageAndTileSizeMarkerSegment, Box<dyn error::Error>> {
         info!("SIZ start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = ImageAndTileSizeMarkerSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = ImageAndTileSizeMarkerSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         reader.read_exact(&mut segment.decoder_capabilities)?;
         reader.read_exact(&mut segment.reference_grid_width)?;
@@ -1584,10 +1585,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<CodingStyleMarkerSegment, Box<dyn error::Error>> {
         info!("COD start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = CodingStyleMarkerSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = CodingStyleMarkerSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         reader.read_exact(&mut segment.coding_style)?;
         reader.read_exact(&mut segment.progression_order)?;
@@ -1654,10 +1656,11 @@ impl ContiguousCodestream {
         no_components: u16,
     ) -> Result<CodingStyleComponentSegment, Box<dyn error::Error>> {
         info!("COC start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = CodingStyleComponentSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = CodingStyleComponentSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         segment.index = self.decode_component_index(reader, no_components)?;
 
@@ -1679,10 +1682,11 @@ impl ContiguousCodestream {
         no_components: u16,
     ) -> Result<RegionOfInterestSegment, Box<dyn error::Error>> {
         info!("RGN start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = RegionOfInterestSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = RegionOfInterestSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         segment.component_index = self.decode_component_index(reader, no_components)?;
 
@@ -1699,10 +1703,11 @@ impl ContiguousCodestream {
         no_components: u16,
     ) -> Result<ProgressionOrderChangeSegment, Box<dyn error::Error>> {
         info!("POC start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = ProgressionOrderChangeSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = ProgressionOrderChangeSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         // The number of progression changes can be derived from the length of the
         // marker segment.
@@ -1792,9 +1797,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<TilePartLengthsSegment, Box<dyn error::Error>> {
         info!("TLM start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = TilePartLengthsSegment::default();
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = TilePartLengthsSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
         reader.read_exact(&mut segment.parameter_sizes)?;
 
         let parameter_sizes = segment.parameter_sizes();
@@ -1890,9 +1897,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<QuantizationDefaultMarkerSegment, Box<dyn error::Error>> {
         info!("QCD start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = QuantizationDefaultMarkerSegment::default();
+        let mut segment = QuantizationDefaultMarkerSegment {
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
-        segment.length = self.decode_length(reader)?;
         reader.read_exact(&mut segment.quantization_style)?;
 
         let no_decomposition_levels = match segment.quantization_style() {
@@ -1918,12 +1927,11 @@ impl ContiguousCodestream {
         no_components: u16,
     ) -> Result<QuantizationComponentSegment, Box<dyn error::Error>> {
         info!("QCC start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = QuantizationComponentSegment::default();
-
-        segment.offset = reader.stream_position()?;
-
-        // Lqcc
-        segment.length = self.decode_length(reader)?;
+        let mut segment = QuantizationComponentSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         // Cqcc
         segment.component_index = self.decode_component_index(reader, no_components)?;
@@ -1959,10 +1967,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<PacketLengthSegment, Box<dyn error::Error>> {
         info!("PLM start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = PacketLengthSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = PacketLengthSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         reader.read_exact(&mut segment.index)?;
         reader.read_exact(&mut segment.no_bytes)?;
@@ -2016,10 +2025,11 @@ impl ContiguousCodestream {
         reader: &mut R,
     ) -> Result<TilePacketLength, Box<dyn error::Error>> {
         info!("PLT start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = TilePacketLength::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = TilePacketLength {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         reader.read_exact(&mut segment.index)?;
 
@@ -2036,10 +2046,11 @@ impl ContiguousCodestream {
         no_components: u16,
     ) -> Result<ComponentRegistrationSegment, Box<dyn error::Error>> {
         info!("CRG start at byte offset {}", reader.stream_position()? - 2);
-        let mut segment = ComponentRegistrationSegment::default();
-
-        segment.offset = reader.stream_position()?;
-        segment.length = self.decode_length(reader)?;
+        let mut segment = ComponentRegistrationSegment {
+            offset: reader.stream_position()?,
+            length: self.decode_length(reader)?,
+            ..Default::default()
+        };
 
         segment.horizontal_offset = Vec::with_capacity(no_components as usize);
         segment.vertical_offset = Vec::with_capacity(no_components as usize);

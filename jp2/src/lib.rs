@@ -556,9 +556,11 @@ impl JBox for HeaderSuperBox {
                         }
                         .into());
                     }
-                    let mut palette_box = PaletteBox::default();
-                    palette_box.length = box_length;
-                    palette_box.offset = reader.stream_position()?;
+                    let mut palette_box = PaletteBox {
+                        length: box_length,
+                        offset: reader.stream_position()?,
+                        ..Default::default()
+                    };
                     info!("PaletteBox start at {:?}", palette_box.offset);
                     palette_box.decode(reader)?;
                     self.palette_box = Some(palette_box);
@@ -600,9 +602,11 @@ impl JBox for HeaderSuperBox {
                         .into());
                     }
 
-                    let mut channel_definition_box = ChannelDefinitionBox::default();
-                    channel_definition_box.length = box_length;
-                    channel_definition_box.offset = reader.stream_position()?;
+                    let mut channel_definition_box = ChannelDefinitionBox {
+                        length: box_length,
+                        offset: reader.stream_position()?,
+                        ..Default::default()
+                    };
                     info!(
                         "ChannelDefinitionBox start at {:?}",
                         channel_definition_box.offset
@@ -624,9 +628,11 @@ impl JBox for HeaderSuperBox {
                         .into());
                     }
 
-                    let mut resolution_box = ResolutionSuperBox::default();
-                    resolution_box.length = box_length;
-                    resolution_box.offset = reader.stream_position()?;
+                    let mut resolution_box = ResolutionSuperBox {
+                        length: box_length,
+                        offset: reader.stream_position()?,
+                        ..Default::default()
+                    };
                     info!("ResolutionBox start at {:?}", resolution_box.offset);
                     resolution_box.decode(reader)?;
                     info!("ResolutionBox finish at {:?}", reader.stream_position()?);
@@ -1771,9 +1777,11 @@ impl JBox for ResolutionSuperBox {
                         }
                         .into());
                     }
-                    let mut capture_resolution_box = CaptureResolutionBox::default();
-                    capture_resolution_box.length = box_length;
-                    capture_resolution_box.offset = reader.stream_position()?;
+                    let mut capture_resolution_box = CaptureResolutionBox {
+                        length: box_length,
+                        offset: reader.stream_position()?,
+                        ..Default::default()
+                    };
                     info!(
                         "CaptureResolutionBox start at {:?}",
                         capture_resolution_box.offset
@@ -1794,9 +1802,11 @@ impl JBox for ResolutionSuperBox {
                         .into());
                     }
 
-                    let mut default_display_resolution_box = DefaultDisplayResolutionBox::default();
-                    default_display_resolution_box.length = box_length;
-                    default_display_resolution_box.offset = reader.stream_position()?;
+                    let mut default_display_resolution_box = DefaultDisplayResolutionBox {
+                        length: box_length,
+                        offset: reader.stream_position()?,
+                        ..Default::default()
+                    };
                     info!(
                         "DisplayResolutionBox start at {:?}",
                         default_display_resolution_box.offset
@@ -2807,9 +2817,11 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 // and File Type boxes it shall not be inside any other
                 // superbox within the file)
                 info!("HeaderSuperBox start at {:?}", reader.stream_position()?);
-                let mut header_box = HeaderSuperBox::default();
-                header_box.length = box_length;
-                header_box.offset = reader.stream_position()?;
+                let mut header_box = HeaderSuperBox {
+                    length: box_length,
+                    offset: reader.stream_position()?,
+                    ..Default::default()
+                };
                 header_box.decode(reader)?;
                 header_box_option = Some(header_box);
                 info!("HeaderSuperBox finish at {:?}", reader.stream_position()?);
@@ -2843,18 +2855,22 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 info!("XMLBox finish at {:?}", reader.stream_position()?);
             }
             BoxTypes::Uuid => {
-                let mut uuid_box = UUIDBox::default();
-                uuid_box.length = box_length;
-                uuid_box.offset = reader.stream_position()?;
+                let mut uuid_box = UUIDBox {
+                    length: box_length,
+                    offset: reader.stream_position()?,
+                    ..Default::default()
+                };
                 info!("UUIDBox start at {:?}", uuid_box.offset);
                 uuid_box.decode(reader)?;
                 uuid_boxes.push(uuid_box);
                 info!("UUIDBox finish at {:?}", reader.stream_position()?);
             }
             BoxTypes::UUIDInfo => {
-                let mut uuid_info_box = UUIDInfoSuperBox::default();
-                uuid_info_box.length = box_length;
-                uuid_info_box.offset = reader.stream_position()?;
+                let mut uuid_info_box = UUIDInfoSuperBox {
+                    length: box_length,
+                    offset: reader.stream_position()?,
+                    ..Default::default()
+                };
                 info!("UUIDInfoBox start at {:?}", uuid_info_box.offset);
                 uuid_info_box.decode(reader)?;
 
@@ -2865,9 +2881,11 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 info!("UUIDInfoBox finish at {:?}", reader.stream_position()?);
             }
             BoxTypes::UUIDList => {
-                let mut uuid_list_box = UUIDListBox::default();
-                uuid_list_box.length = box_length;
-                uuid_list_box.offset = reader.stream_position()?;
+                let mut uuid_list_box = UUIDListBox {
+                    length: box_length,
+                    offset: reader.stream_position()?,
+                    ..Default::default()
+                };
                 info!("UUIDListBox start at {:?}", uuid_list_box.offset);
                 uuid_list_box.decode(reader)?;
                 match &mut current_uuid_info_box {

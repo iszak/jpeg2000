@@ -940,3 +940,72 @@ fn test_j2pi() {
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
+
+#[test]
+fn test_res_boxes() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("res_boxes.jp2");
+    let file = File::open(path).expect("file should exist");
+    let mut reader = BufReader::new(file);
+    let result = decode_jp2(&mut reader);
+    assert!(result.is_ok());
+    let boxes = result.unwrap();
+
+    assert!(boxes.header_box().is_some());
+    let header_box = boxes.header_box().as_ref().unwrap();
+    let image_header_box = &header_box.image_header_box;
+    assert_eq!(image_header_box.height(), 200);
+    assert_eq!(image_header_box.width(), 200);
+    assert_eq!(image_header_box.components_num(), 1);
+    assert_eq!(image_header_box.intellectual_property(), 0);
+    assert_eq!(image_header_box.components_bits(), 8);
+    assert_eq!(image_header_box.values_are_signed(), false);
+
+    assert!(header_box.channel_definition_box.is_none());
+    assert!(header_box.resolution_box.is_some());
+    let res = header_box.resolution_box.as_ref().unwrap();
+    assert!(res.capture_resolution_box().is_some());
+    let resc = res.capture_resolution_box().as_ref().unwrap();
+    /* From jpylyzer:
+        <vRcN>20</vRcN>
+        <vRcD>1</vRcD>
+        <hRcN>25</hRcN>
+        <hRcD>1</hRcD>
+        <vRcE>0</vRcE>
+        <hRcE>0</hRcE>
+    */
+    assert_eq!(resc.vertical_capture_grid_resolution_numerator(), 20);
+    assert_eq!(resc.vertical_capture_grid_resolution_denominator(), 1);
+    assert_eq!(resc.horizontal_capture_grid_resolution_numerator(), 25);
+    assert_eq!(resc.horizontal_capture_grid_resolution_denominator(), 1);
+    assert_eq!(resc.vertical_capture_grid_resolution_exponent(), 0);
+    assert_eq!(resc.horizontal_capture_grid_resolution_exponent(), 0);
+    assert_eq!(resc.vertical_resolution_capture(), 20.0);
+    assert_eq!(resc.horizontal_resolution_capture(), 25.0);
+
+    assert!(res.default_display_resolution_box().is_some());
+    let resd = res.default_display_resolution_box().as_ref().unwrap();
+    /* From jpylyzer:
+        <vRdN>300</vRdN>
+        <vRdD>1</vRdD>
+        <hRdN>375</hRdN>
+        <hRdD>1</hRdD>
+        <vRdE>0</vRdE>
+        <hRdE>0</hRdE>
+    */
+    assert_eq!(resd.vertical_display_grid_resolution_numerator(), 300);
+    assert_eq!(resd.vertical_display_grid_resolution_denominator(), 1);
+    assert_eq!(resd.horizontal_display_grid_resolution_numerator(), 375);
+    assert_eq!(resd.horizontal_display_grid_resolution_denominator(), 1);
+    assert_eq!(resd.vertical_display_grid_resolution_exponent(), 0);
+    assert_eq!(resd.horizontal_display_grid_resolution_exponent(), 0);
+    assert_eq!(resd.vertical_display_grid_resolution(), 300.0);
+    assert_eq!(resd.horizontal_display_grid_resolution(), 375.0);
+
+    assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
+
+    assert_eq!(boxes.xml_boxes().len(), 0);
+
+    assert_eq!(boxes.uuid_boxes().len(), 0);
+}

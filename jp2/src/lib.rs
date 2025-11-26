@@ -1711,33 +1711,34 @@ impl JBox for ColourSpecificationBox {
     }
 }
 
-// I.5.3.7
-//
-// Resolution box (superbox)
-//
-// This box specifies the capture and default display grid resolutions of this
-// image.
+/// Resolution box (superbox)
+///
+/// This box specifies the capture and default display grid resolutions of this
+/// image.
+///
+/// See Part 1 Section I.5.3.7 for more information.
 #[derive(Debug, Default)]
 pub struct ResolutionSuperBox {
     length: u64,
     offset: u64,
 
-    // Capture Resolution box.
-    //
-    // This box specifies the grid resolution at which this image was captured.
     capture_resolution_box: Option<CaptureResolutionBox>,
 
-    // Default Display Resolution box.
-    //
-    // This box specifies the default grid resolution at which this image
-    // should be displayed.
     default_display_resolution_box: Option<DefaultDisplayResolutionBox>,
 }
+
 impl ResolutionSuperBox {
+    /// Capture Resolution box.
+    ///
+    /// This box specifies the grid resolution at which this image was captured.
     pub fn capture_resolution_box(&self) -> &Option<CaptureResolutionBox> {
         &self.capture_resolution_box
     }
 
+    /// Default Display Resolution box.
+    ///
+    /// This box specifies the default grid resolution at which this image
+    /// should be displayed.
     pub fn default_display_resolution_box(&self) -> &Option<DefaultDisplayResolutionBox> {
         &self.default_display_resolution_box
     }
@@ -2370,17 +2371,17 @@ impl JBox for ContiguousCodestreamBox {
     }
 }
 
-// I.5.3.7.2
-//
-// Default Display Resolution box
-//
-// This box specifies a desired display grid resolution.
-//
-// For example, this may be used to determine the size of the image on a page
-// when the image is placed in a page-layout program.
-//
-// However, this value is only a default. Each application must determine an
-// appropriate display size for that application.
+/// Default Display Resolution box.
+///
+/// This box specifies a desired display grid resolution.
+///
+/// For example, this may be used to determine the size of the image on a page
+/// when the image is placed in a page-layout program.
+///
+/// However, this value is only a default. Each application must determine an
+/// appropriate display size for that application.
+///
+/// See Part 1 Section I.5.3.7.2 for more information.
 #[derive(Debug, Default)]
 pub struct DefaultDisplayResolutionBox {
     length: u64,
@@ -2426,17 +2427,17 @@ impl DefaultDisplayResolutionBox {
     }
 
     // VRd = VRdN/VRdD * 10^VRdE
-    pub fn vertical_display_grid_resolution(&self) -> u64 {
-        self.vertical_display_grid_resolution_numerator() as u64
-            / self.vertical_display_grid_resolution_denominator() as u64
-            * (10_u64).pow(self.vertical_display_grid_resolution_exponent() as u32)
+    pub fn vertical_display_grid_resolution(&self) -> f64 {
+        self.vertical_display_grid_resolution_numerator() as f64
+            / self.vertical_display_grid_resolution_denominator() as f64
+            * (10_f64).powi(self.vertical_display_grid_resolution_exponent() as i32)
     }
 
     // HRd = HRdN/HRdD * 10^HRdE
-    pub fn horizontal_display_grid_resolution(&self) -> u64 {
-        self.horizontal_display_grid_resolution_numerator() as u64
-            / self.horizontal_display_grid_resolution_denominator() as u64
-            * (10_u64).pow(self.horizontal_display_grid_resolution_exponent() as u32)
+    pub fn horizontal_display_grid_resolution(&self) -> f64 {
+        self.horizontal_display_grid_resolution_numerator() as f64
+            / self.horizontal_display_grid_resolution_denominator() as f64
+            * (10_f64).powi(self.horizontal_display_grid_resolution_exponent() as i32)
     }
 }
 
@@ -2470,14 +2471,16 @@ impl JBox for DefaultDisplayResolutionBox {
     }
 }
 
-// I.5.3.7.1
-//
-// This box specifies the grid resolution at which the source was digitized to
-// create the image samples specified by the codestream.
-//
-// For example, this may specify the resolution of the flatbed scanner that
-// captured a page from a book. The capture grid resolution could also specify
-// the resolution of an aerial digital camera or satellite camera.
+/// Capture Resolution box
+///
+/// This box specifies the grid resolution at which the source was digitized to
+/// create the image samples specified by the codestream.
+///
+/// For example, this may specify the resolution of the flatbed scanner that
+/// captured a page from a book. The capture grid resolution could also specify
+/// the resolution of an aerial digital camera or satellite camera.
+///
+/// See Part 1 Section I.5.3.7.1 for more information.
 #[derive(Debug, Default)]
 pub struct CaptureResolutionBox {
     length: u64,
@@ -2554,7 +2557,7 @@ impl CaptureResolutionBox {
 
     // VRc = (VRcN / VRcD) * 10^VRcE
     // The values VRc and HRc are always in reference grid points per meter.
-    fn vertical_resolution_capture(&self) -> f64 {
+    pub fn vertical_resolution_capture(&self) -> f64 {
         let mut vertical_resolution_capture: f64 = self.vertical_capture_grid_resolution_numerator()
             as f64
             / self.vertical_capture_grid_resolution_denominator() as f64;
@@ -2567,7 +2570,7 @@ impl CaptureResolutionBox {
 
     // HRc = (HRcN / HRcD) * 10^HRcE
     // The values VRc and HRc are always in reference grid points per meter.
-    fn horizontal_resolution_capture(&self) -> f64 {
+    pub fn horizontal_resolution_capture(&self) -> f64 {
         let mut horizontal_resolution_capture: f64 =
             self.horizontal_capture_grid_resolution_numerator() as f64
                 / self.horizontal_capture_grid_resolution_denominator() as f64;

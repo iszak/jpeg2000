@@ -965,8 +965,10 @@ fn test_res_boxes() {
     assert!(header_box.channel_definition_box.is_none());
     assert!(header_box.resolution_box.is_some());
     let res = header_box.resolution_box.as_ref().unwrap();
+    assert_eq!(res.identifier(), [b'r', b'e', b's', b' ']);
     assert!(res.capture_resolution_box().is_some());
     let resc = res.capture_resolution_box().as_ref().unwrap();
+    assert_eq!(resc.identifier(), [b'r', b'e', b's', b'c']);
     /* From jpylyzer:
         <vRcN>20</vRcN>
         <vRcD>1</vRcD>
@@ -986,6 +988,7 @@ fn test_res_boxes() {
 
     assert!(res.default_display_resolution_box().is_some());
     let resd = res.default_display_resolution_box().as_ref().unwrap();
+    assert_eq!(resd.identifier(), [b'r', b'e', b's', b'd']);
     /* From jpylyzer:
         <vRdN>300</vRdN>
         <vRdD>1</vRdD>

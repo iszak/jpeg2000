@@ -2478,7 +2478,7 @@ impl CaptureResolutionBox {
 impl JBox for CaptureResolutionBox {
     // The type of a Capture Resolution box shall be ‘resc’ (0x7265 7363).
     fn identifier(&self) -> BoxType {
-        BOX_TYPE_DEFAULT_DISPLAY_RESOLUTION
+        BOX_TYPE_CAPTURE_RESOLUTION
     }
 
     fn length(&self) -> u64 {

@@ -79,6 +79,7 @@ fn test_sample_file2() {
     let header_box = boxes.header_box().as_ref().unwrap();
     assert!(header_box.channel_definition_box.is_some());
     let cdef = header_box.channel_definition_box.as_ref().unwrap();
+    assert_eq!(cdef.identifier(), [b'c', b'd', b'e', b'f']);
     /*
      From the associated description file (file2.txt):
 
@@ -199,6 +200,8 @@ fn test_sample_file5() {
     assert!(header_box.component_mapping_box.is_none());
 
     assert_eq!(boxes.xml_boxes().len(), 2);
+    let xml0 = boxes.xml_boxes().first().unwrap();
+    assert_eq!(xml0.identifier(), [b'x', b'm', b'l', b' ']);
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -278,6 +281,8 @@ fn test_sample_file8() {
     assert!(header_box.component_mapping_box.is_none());
 
     assert_eq!(boxes.xml_boxes().len(), 2);
+    let xml0 = boxes.xml_boxes().first().unwrap();
+    assert_eq!(xml0.identifier(), [b'x', b'm', b'l', b' ']);
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -570,6 +575,7 @@ fn test_sample_file9() {
     Entry #255: 0x00000000f5 0x00000000f5 0x00000000f5
      */
     let pclr = header_box.palette_box.as_ref().unwrap();
+    assert_eq!(pclr.identifier(), [b'p', b'c', b'l', b'r']);
     assert_eq!(pclr.num_components(), 3);
     assert_eq!(pclr.num_entries(), 256);
     assert_eq!(pclr.generated_components().len(), 3);
@@ -618,6 +624,7 @@ fn test_sample_file9() {
            Palette Column #2: 2
     */
     let cmap = header_box.component_mapping_box.as_ref().unwrap();
+    assert_eq!(cmap.identifier(), [b'c', b'm', b'a', b'p']);
     assert_eq!(cmap.component_map().len(), 3);
     assert_eq!(cmap.component_map()[0].component(), 0);
     assert_eq!(cmap.component_map()[0].mapping_type(), 1);
@@ -684,6 +691,8 @@ fn test_sample_subsampling2() {
     assert_eq!(boxes.xml_boxes().len(), 0);
 
     assert_eq!(boxes.uuid_boxes().len(), 1);
+    let uuid = boxes.uuid_boxes().first().unwrap();
+    assert_eq!(uuid.identifier(), [b'u', b'u', b'i', b'd']);
 }
 
 #[test]
@@ -751,17 +760,21 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert!(boxes.signature_box().is_some());
     let signature = boxes.signature_box().as_ref().unwrap();
+    assert_eq!(signature.identifier(), [b'j', b'P', b' ', b' ']);
     assert_eq!(signature.signature(), *b"\x0d\x0a\x87\x0a");
 
     assert!(boxes.file_type_box().is_some());
     let file_type = boxes.file_type_box().as_ref().unwrap();
+    assert_eq!(file_type.identifier(), [b'f', b't', b'y', b'p']);
     assert_eq!(file_type.brand(), "jp2 ");
     assert_eq!(file_type.min_version(), 0);
     assert_eq!(file_type.compatibility_list(), expected.compatibility_list);
 
     assert!(boxes.header_box().is_some());
     let header_box = boxes.header_box().as_ref().unwrap();
+    assert_eq!(header_box.identifier(), [b'j', b'p', b'2', b'h']);
     let image_header_box = &header_box.image_header_box;
+    assert_eq!(image_header_box.identifier(), [b'i', b'h', b'd', b'r']);
     assert_eq!(image_header_box.height(), expected.height);
     assert_eq!(image_header_box.width(), expected.width);
     assert_eq!(image_header_box.components_num(), expected.num_components);
@@ -775,6 +788,7 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert_eq!(header_box.colour_specification_boxes.len(), 1);
     let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+    assert_eq!(colour_specification_box.identifier(), [b'c', b'o', b'l', b'r']);
     assert_eq!(
         colour_specification_box.method(),
         expected.colour_specification_method,
@@ -795,6 +809,7 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
     let codestream_box = boxes.contiguous_codestreams_boxes().first().unwrap();
+    assert_eq!(codestream_box.identifier(), [b'j', b'p', b'2', b'c']);
     assert!(codestream_box.length() > 0);
     assert!(codestream_box.offset() > 0);
 
@@ -932,9 +947,10 @@ fn test_j2pi() {
     assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
 
     assert!(boxes.intellectual_property_box().is_some());
-    let j2ki = boxes.intellectual_property_box().as_ref().unwrap();
-    assert_eq!(j2ki.length(), 469);
-    assert_eq!(j2ki.format(), "<?xml version=\"1.0\"?>\n<!-- markings are for test purposes only, content is public release -->\n<jp:IPR xmlns:jp=\"http://www.jpeg.org/jpx/1.0/xml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<jp:IPR_EXPLOITATION>\n<jp:IPR_USE_RESTRICTION>unclassified</jp:IPR_USE_RESTRICTION>\n<jp:IPR_MGMT_SYS>\n<jp:IPR_MGMT_TYPE>SWE</jp:IPR_MGMT_TYPE>\n</jp:IPR_MGMT_SYS>\n<jp:IPR_PROTECTION>SWE;FRA;USA;GBR;ARE;ZAF;DEU;ITA;CZE</jp:IPR_PROTECTION>\n</jp:IPR_EXPLOITATION>\n</jp:IPR>");
+    let jp2i = boxes.intellectual_property_box().as_ref().unwrap();
+    assert_eq!(jp2i.identifier(), [b'j', b'p', b'2', b'i']);
+    assert_eq!(jp2i.length(), 469);
+    assert_eq!(jp2i.format(), "<?xml version=\"1.0\"?>\n<!-- markings are for test purposes only, content is public release -->\n<jp:IPR xmlns:jp=\"http://www.jpeg.org/jpx/1.0/xml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<jp:IPR_EXPLOITATION>\n<jp:IPR_USE_RESTRICTION>unclassified</jp:IPR_USE_RESTRICTION>\n<jp:IPR_MGMT_SYS>\n<jp:IPR_MGMT_TYPE>SWE</jp:IPR_MGMT_TYPE>\n</jp:IPR_MGMT_SYS>\n<jp:IPR_PROTECTION>SWE;FRA;USA;GBR;ARE;ZAF;DEU;ITA;CZE</jp:IPR_PROTECTION>\n</jp:IPR_EXPLOITATION>\n</jp:IPR>");
 
     assert_eq!(boxes.xml_boxes().len(), 0);
 

@@ -79,6 +79,7 @@ fn test_sample_file2() {
     let header_box = boxes.header_box().as_ref().unwrap();
     assert!(header_box.channel_definition_box.is_some());
     let cdef = header_box.channel_definition_box.as_ref().unwrap();
+    assert_eq!(cdef.identifier(), *b"cdef");
     /*
      From the associated description file (file2.txt):
 
@@ -199,6 +200,8 @@ fn test_sample_file5() {
     assert!(header_box.component_mapping_box.is_none());
 
     assert_eq!(boxes.xml_boxes().len(), 2);
+    let xml0 = boxes.xml_boxes().first().unwrap();
+    assert_eq!(xml0.identifier(), *b"xml ");
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -278,6 +281,8 @@ fn test_sample_file8() {
     assert!(header_box.component_mapping_box.is_none());
 
     assert_eq!(boxes.xml_boxes().len(), 2);
+    let xml0 = boxes.xml_boxes().first().unwrap();
+    assert_eq!(xml0.identifier(), *b"xml ");
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -570,6 +575,7 @@ fn test_sample_file9() {
     Entry #255: 0x00000000f5 0x00000000f5 0x00000000f5
      */
     let pclr = header_box.palette_box.as_ref().unwrap();
+    assert_eq!(pclr.identifier(), *b"pclr");
     assert_eq!(pclr.num_components(), 3);
     assert_eq!(pclr.num_entries(), 256);
     assert_eq!(pclr.generated_components().len(), 3);
@@ -618,6 +624,7 @@ fn test_sample_file9() {
            Palette Column #2: 2
     */
     let cmap = header_box.component_mapping_box.as_ref().unwrap();
+    assert_eq!(cmap.identifier(), *b"cmap");
     assert_eq!(cmap.component_map().len(), 3);
     assert_eq!(cmap.component_map()[0].component(), 0);
     assert_eq!(cmap.component_map()[0].mapping_type(), 1);
@@ -684,6 +691,8 @@ fn test_sample_subsampling2() {
     assert_eq!(boxes.xml_boxes().len(), 0);
 
     assert_eq!(boxes.uuid_boxes().len(), 1);
+    let uuid = boxes.uuid_boxes().first().unwrap();
+    assert_eq!(uuid.identifier(), *b"uuid");
 }
 
 #[test]
@@ -751,17 +760,21 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert!(boxes.signature_box().is_some());
     let signature = boxes.signature_box().as_ref().unwrap();
+    assert_eq!(signature.identifier(), *b"jP  ");
     assert_eq!(signature.signature(), *b"\x0d\x0a\x87\x0a");
 
     assert!(boxes.file_type_box().is_some());
     let file_type = boxes.file_type_box().as_ref().unwrap();
+    assert_eq!(file_type.identifier(), *b"ftyp");
     assert_eq!(file_type.brand(), "jp2 ");
     assert_eq!(file_type.min_version(), 0);
     assert_eq!(file_type.compatibility_list(), expected.compatibility_list);
 
     assert!(boxes.header_box().is_some());
     let header_box = boxes.header_box().as_ref().unwrap();
+    assert_eq!(header_box.identifier(), *b"jp2h");
     let image_header_box = &header_box.image_header_box;
+    assert_eq!(image_header_box.identifier(), *b"ihdr");
     assert_eq!(image_header_box.height(), expected.height);
     assert_eq!(image_header_box.width(), expected.width);
     assert_eq!(image_header_box.components_num(), expected.num_components);
@@ -775,6 +788,7 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert_eq!(header_box.colour_specification_boxes.len(), 1);
     let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+    assert_eq!(colour_specification_box.identifier(), *b"colr");
     assert_eq!(
         colour_specification_box.method(),
         expected.colour_specification_method,
@@ -795,6 +809,7 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
 
     assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
     let codestream_box = boxes.contiguous_codestreams_boxes().first().unwrap();
+    assert_eq!(codestream_box.identifier(), *b"jp2c");
     assert!(codestream_box.length() > 0);
     assert!(codestream_box.offset() > 0);
 
@@ -932,9 +947,10 @@ fn test_j2pi() {
     assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
 
     assert!(boxes.intellectual_property_box().is_some());
-    let j2ki = boxes.intellectual_property_box().as_ref().unwrap();
-    assert_eq!(j2ki.length(), 469);
-    assert_eq!(j2ki.format(), "<?xml version=\"1.0\"?>\n<!-- markings are for test purposes only, content is public release -->\n<jp:IPR xmlns:jp=\"http://www.jpeg.org/jpx/1.0/xml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<jp:IPR_EXPLOITATION>\n<jp:IPR_USE_RESTRICTION>unclassified</jp:IPR_USE_RESTRICTION>\n<jp:IPR_MGMT_SYS>\n<jp:IPR_MGMT_TYPE>SWE</jp:IPR_MGMT_TYPE>\n</jp:IPR_MGMT_SYS>\n<jp:IPR_PROTECTION>SWE;FRA;USA;GBR;ARE;ZAF;DEU;ITA;CZE</jp:IPR_PROTECTION>\n</jp:IPR_EXPLOITATION>\n</jp:IPR>");
+    let jp2i = boxes.intellectual_property_box().as_ref().unwrap();
+    assert_eq!(jp2i.identifier(), *b"jp2i");
+    assert_eq!(jp2i.length(), 469);
+    assert_eq!(jp2i.format(), "<?xml version=\"1.0\"?>\n<!-- markings are for test purposes only, content is public release -->\n<jp:IPR xmlns:jp=\"http://www.jpeg.org/jpx/1.0/xml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n<jp:IPR_EXPLOITATION>\n<jp:IPR_USE_RESTRICTION>unclassified</jp:IPR_USE_RESTRICTION>\n<jp:IPR_MGMT_SYS>\n<jp:IPR_MGMT_TYPE>SWE</jp:IPR_MGMT_TYPE>\n</jp:IPR_MGMT_SYS>\n<jp:IPR_PROTECTION>SWE;FRA;USA;GBR;ARE;ZAF;DEU;ITA;CZE</jp:IPR_PROTECTION>\n</jp:IPR_EXPLOITATION>\n</jp:IPR>");
 
     assert_eq!(boxes.xml_boxes().len(), 0);
 
@@ -965,10 +981,10 @@ fn test_res_boxes() {
     assert!(header_box.channel_definition_box.is_none());
     assert!(header_box.resolution_box.is_some());
     let res = header_box.resolution_box.as_ref().unwrap();
-    assert_eq!(res.identifier(), [b'r', b'e', b's', b' ']);
+    assert_eq!(res.identifier(), *b"res ");
     assert!(res.capture_resolution_box().is_some());
     let resc = res.capture_resolution_box().as_ref().unwrap();
-    assert_eq!(resc.identifier(), [b'r', b'e', b's', b'c']);
+    assert_eq!(resc.identifier(), *b"resc");
     /* From jpylyzer:
         <vRcN>20</vRcN>
         <vRcD>1</vRcD>
@@ -988,7 +1004,7 @@ fn test_res_boxes() {
 
     assert!(res.default_display_resolution_box().is_some());
     let resd = res.default_display_resolution_box().as_ref().unwrap();
-    assert_eq!(resd.identifier(), [b'r', b'e', b's', b'd']);
+    assert_eq!(resd.identifier(), *b"resd");
     /* From jpylyzer:
         <vRdN>300</vRdN>
         <vRdD>1</vRdD>

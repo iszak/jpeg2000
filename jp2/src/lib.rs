@@ -1270,9 +1270,21 @@ pub struct GeneratedComponent {
 }
 
 #[derive(Debug, PartialEq)]
+/// Bit depth variations
 pub enum BitDepth {
+    /// Signed values.
+    ///
+    /// The value is the bit depth including the sign bit.
     Signed { value: u8 },
+
+    /// Unsigned values.
+    ///
+    /// The value is the bit depth.
     Unsigned { value: u8 },
+
+    /// Reserved.
+    ///
+    /// This value is reserved for ITU-T | ISO/IEC use.
     Reserved { value: u8 },
 }
 
@@ -1292,6 +1304,7 @@ impl BitDepth {
         }
     }
 
+    /// The number of bits.
     pub fn value(&self) -> u8 {
         match &self {
             Self::Signed { value } => *value,
@@ -1412,41 +1425,41 @@ impl JBox for PaletteBox {
     }
 }
 
-// I.5.3.2
-//
-// The Bits Per Component box specifies the bit depth of each component.
-//
-// If the bit depth of all components in the codestream is the same (in both
-// sign and precision), then this box shall not be found. Otherwise, this box
-// specifies the bit depth of each individual component.
-//
-// The order of bit depth values in this box is the actual order in which those
-// components are enumerated within the codestream.
-//
-// The exact location of this box within the JP2 Header box may vary provided
-// that it follows the Image Header box.
+/// Bits Per Component box.
+///
+/// The Bits Per Component box specifies the bit depth of each component.
+///
+/// If the bit depth of all components in the codestream is the same (in both
+/// sign and precision), then this box shall not be found. Otherwise, this box
+/// specifies the bit depth of each individual component.
+///
+/// The order of bit depth values in this box is the actual order in which those
+/// components are enumerated within the codestream.
+///
+/// The exact location of this box within the JP2 Header box may vary provided
+/// that it follows the Image Header box.
+///
+/// See ITU-T T.800 (V4) | ISO/IEC 15444-1:2024 Section I.5.3.2.
 #[derive(Debug, Default)]
 pub struct BitsPerComponentBox {
     length: u64,
     offset: u64,
     components_num: u16,
-
-    // Bits per component.
-    //
-    // This parameter specifies the bit depth of component i, minus 1, encoded
-    // as a 1-byte value.
-    //
-    // The ordering of the components within the Bits Per Component Box shall
-    // be the same as the ordering of the components within the codestream.
-    //
-    // The number of BP_Ci fields shall be the same as the value of the NC
-    // field from the Image Header box.
-    //
-    // The value of this field shall be equivalent to the respective Ssiz_i
-    // field in the SIZ marker in the codestream.
     bits_per_component: Vec<u8>,
 }
 impl BitsPerComponentBox {
+    /// Bits per component.
+    ///
+    /// This parameter specifies the bit depth of the components.
+    ///
+    /// The ordering of the components within the Bits Per Component Box shall
+    /// be the same as the ordering of the components within the codestream.
+    ///
+    /// The number of BPC<sup>i</sup> fields shall be the same as the value of the NC
+    /// field from the Image Header box.
+    ///
+    /// The value of this field shall be equivalent to the respective Ssiz<sup>i</sup>
+    /// field in the SIZ marker in the codestream.
     pub fn bits_per_component(&self) -> Vec<BitDepth> {
         self.bits_per_component
             .iter()

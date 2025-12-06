@@ -2099,24 +2099,24 @@ impl JBox for UUIDBox {
     }
 }
 
-// I.7.3
-//
-// UUID Info box (superbox)
-//
-// While it is useful to allow vendors to extend JP2 files by adding information
-// using UUID boxes, it is also useful to provide information in a standard form
-// which can be used by non-extended applications to get more information about
-// the extensions in the file. This information is contained in UUID Info boxes.
-//
-// A JP2 file may contain zero or more UUID Info boxes.
-//
-// These boxes may be found anywhere in the top level of the file (the superbox
-// of a UUID Info box shall be the JP2 file itself) except before the File Type
-// box.
-//
-// These boxes, if present, may not provide a complete index for the UUIDs in
-// the file, may reference UUIDs not used in the file, and possibly may provide
-// multiple references for the same UUID
+/// UUID Info box (superbox)
+///
+/// While it is useful to allow vendors to extend JP2 files by adding information
+/// using UUID boxes, it is also useful to provide information in a standard form
+/// which can be used by non-extended applications to get more information about
+/// the extensions in the file. This information is contained in UUID Info boxes.
+///
+/// A JP2 file may contain zero or more UUID Info boxes.
+///
+/// These boxes may be found anywhere in the top level of the file (the superbox
+/// of a UUID Info box shall be the JP2 file itself) except before the File Type
+/// box.
+///
+/// These boxes, if present, may not provide a complete index for the UUIDs in
+/// the file, may reference UUIDs not used in the file, and possibly may provide
+/// multiple references for the same UUID.
+///
+/// See ITU-T T.800 (V4) | ISO/IEC 15444-1:2024 Section I.7.3.
 #[derive(Debug, Default)]
 pub struct UUIDInfoSuperBox {
     length: u64,
@@ -2147,11 +2147,11 @@ impl JBox for UUIDInfoSuperBox {
     }
 }
 
-// I.7.3.1
-//
-// UUID List box
-//
-// This box contains a list of UUIDs.
+/// UUID List box.
+///
+/// This box contains a list of UUIDs.
+///
+/// See ITU-T T.800 (V4) | ISO/IEC 15444-1:2024 Section I.7.3.1.
 #[derive(Debug, Default)]
 pub struct UUIDListBox {
     length: u64,
@@ -2164,9 +2164,9 @@ pub struct UUIDListBox {
     // This field is encoded as a 2-byte big-endian unsigned integer.
     number_of_uuids: [u8; 2],
 
-    // ID^i: ID
+    // IDs.
     //
-    // This field specifies one UUID, as specified in ISO/IEC 11578, which
+    // Each instance of this field specifies one UUID, as specified in ISO/IEC 11578, which
     // shall be associated with the URL contained in the URL box within the
     // same UUID Info box.
     //
@@ -2224,21 +2224,21 @@ impl JBox for UUIDListBox {
     }
 }
 
-// I.7.3.2
-//
-// Data Entry URL box
-//
-// This box contains a URL which can be used by an application to acquire more
-// information about the associated vendor-specific extensions.
-//
-// The format of the information acquired through the use of this URL is not
-// defined in this Recommendation | International Standard.
-//
-// The URL type should be of a service which delivers a file (e.g., URLs of
-// type file, http, ftp, etc.), which ideally also permits random access.
-//
-// Relative URLs are permissible and are relative to the file containing this
-// Data Entry URL box.
+/// Data Entry URL box.
+///
+/// This box contains a URL which can be used by an application to acquire more
+/// information about the associated vendor-specific extensions.
+///
+/// The format of the information acquired through the use of this URL is not
+/// defined in ITU-T T.800 | ISO/IEC 15444-1.
+///
+/// The URL type should be of a service which delivers a file (e.g., URLs of
+/// type file, http, ftp, etc.), which ideally also permits random access.
+///
+/// Relative URLs are permissible and are relative to the file containing this
+/// Data Entry URL box.
+///
+/// See ITU-T T.800 (V4) | ISO/IEC 15444-1:2024 Section I.7.3.2.
 #[derive(Debug, Default)]
 pub struct DataEntryURLBox {
     length: u64,

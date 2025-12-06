@@ -1483,9 +1483,20 @@ const METHOD_ENUMERATED_COLOUR_SPACE: Method = [1];
 const METHOD_ENUMERATED_RESTRICTED_ICC_PROFILE: Method = [2];
 
 #[derive(Debug, PartialEq)]
+/// Colour specification methods (METH).
+///
+/// In ITU T.800 | ISO/IEC 15444-1, there are two supported colour specification
+/// methods.
 pub enum ColourSpecificationMethods {
+    /// Enumerated colour space, using integer codes.
     EnumeratedColourSpace,
+
+    /// Restricted ICC profile.
     RestrictedICCProfile,
+
+    /// Other value, reserved for use by ITU | ISO/IEC.
+    ///
+    /// This may indicate an extension value from ITU T.801 | ISO/IEC 15444-2.
     Reserved { value: Method },
 }
 
@@ -1520,12 +1531,34 @@ type EnumeratedColourSpace = [u8; 4];
 const ENUMERATED_COLOUR_SPACE_UNKNOWN: EnumeratedColourSpace = [0, 0, 0, 0];
 const ENUMERATED_COLOUR_SPACE_SRGB: EnumeratedColourSpace = [0, 0, 0, 16];
 const ENUMERATED_COLOUR_SPACE_GREYSCALE: EnumeratedColourSpace = [0, 0, 0, 17];
+const ENUMERATED_COLOUR_SPACE_SYCC: EnumeratedColourSpace = [0, 0, 0, 18];
 
-#[derive(Debug)]
-enum EnumeratedColourSpaces {
+#[derive(Debug, PartialEq)]
+/// Enumerated colour space values (EnumCS)
+///
+/// See ISO/IEC 15444-1:2024 Table I.10.
+pub enum EnumeratedColourSpaces {
     #[allow(non_camel_case_types)]
+    /// sRGB
+    ///
+    /// sRGB as defined by IEC 61966-2-1 with Lmin<sub>i</sub>=0 and Lmax<sub>i</sub>=255.
+    /// This colourspace shall be used with channels carrying unsigned values only.
     sRGB,
     Greyscale,
+    #[allow(non_camel_case_types)]
+
+    /// sYCC
+    ///
+    /// sYCC as defined by IEC 61966-2-1 / Amd.1 with Lmin<sub>i</sub>=0 and Lmax<sub>i</sub>=255.
+    /// This colourspace shall be used with channels carrying unsigned values only.
+    ///
+    /// Note: it is not recommended to use the ICT or RCT specified in T.800 | ISO/IEC 15444-1 Annex G
+    /// with sYCC image data. See T.800 | ISO/IEC 15444-1 J.14 for guidelines on handling YCC codestreams.
+    sYCC,
+
+    /// Value reserved for other ITU-T | ISO/IEC uses.
+    ///
+    /// Note: There are additional values used in T.801 | ISO/IEC 15444-1 Table M.25.
     Reserved,
 }
 
@@ -1534,26 +1567,46 @@ impl EnumeratedColourSpaces {
         match value {
             ENUMERATED_COLOUR_SPACE_SRGB => EnumeratedColourSpaces::sRGB,
             ENUMERATED_COLOUR_SPACE_GREYSCALE => EnumeratedColourSpaces::Greyscale,
+            ENUMERATED_COLOUR_SPACE_SYCC => EnumeratedColourSpaces::sYCC,
             _ => EnumeratedColourSpaces::Reserved,
         }
     }
 }
 
-// I.5.3.3
-//
-// Colour Specification box
-//
-// Each Colour Specification box defines one method by which an application can
-// interpret the colourspace of the decompressed image data. This colour
-// specification is to be applied to the image data after it has been
-// decompressed and after any reverse decorrelating component transform has been
-// applied to the image data.
-//
-// A JP2 file may contain multiple Colour Specification boxes, but must contain
-// at least one, specifying different methods for achieving “equivalent” results.
-// A conforming JP2 reader shall ignore all Colour Specification boxes after the
-// first. However, readers conforming to other standards may use those boxes as
-// defined in those other standards
+impl fmt::Display for EnumeratedColourSpaces {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EnumeratedColourSpaces::sRGB => "sRGB",
+                EnumeratedColourSpaces::Greyscale => "greyscale",
+                EnumeratedColourSpaces::sYCC => "sYCC",
+                EnumeratedColourSpaces::Reserved => "Reserved",
+            }
+        )
+    }
+}
+
+/// Colour Specification box.
+///
+/// Each Colour Specification box defines one method by which an application can
+/// interpret the colourspace of the decompressed image data. This colour
+/// specification is to be applied to the image data after it has been
+/// decompressed and after any reverse decorrelating component transform has been
+/// applied to the image data.
+///
+/// A JP2 file may contain multiple Colour Specification boxes, but must contain
+/// at least one, specifying different methods for achieving “equivalent” results.
+/// A conforming JP2 reader shall ignore all Colour Specification boxes after the
+/// first. However, readers conforming to other standards may use those boxes as
+/// defined in those other standards.
+///
+/// See T.800 | ISO/IEC 15444-1 I.5.3.3 for the core requirements.
+/// See T.801 | ISO/IEC 15444-2 Section M11.7.2 for the extension requirements, which
+/// are not yet handled by this implementation.
+/// See T.814 | ISO/IEC 15444-15 Section D.4 for the High Throughput requirements,
+/// which are not yet handled by this implementation.
 #[derive(Debug, Default)]
 pub struct ColourSpecificationBox {
     length: u64,
@@ -1566,56 +1619,82 @@ pub struct ColourSpecificationBox {
 }
 
 impl ColourSpecificationBox {
-    // Specification method.
-    //
-    // This field specifies the method used by this Colour Specification box to
-    // define the colourspace of the decompressed image.
-    //
-    // This field is encoded as a 1-byte unsigned integer.
-    // The value of this field shall be 1 or 2.
-    //
+    /// Specification method.
+    ///
+    /// This field specifies the method used by this Colour Specification box to
+    /// define the colourspace of the decompressed image.
+    ///
+    /// This field is encoded as a 1-byte unsigned integer.
+    ///
+    /// The value of this field shall be 1 or 2 for T.800 | ISO/IEC 15444-1. If
+    /// the value is 1, then an enumerated colourspace is available. If the value
+    /// is 2, then a restricted ICC profile is available.
     pub fn method(&self) -> ColourSpecificationMethods {
         ColourSpecificationMethods::new(self.method)
     }
 
-    // Precedence.
-    //
-    // This field is reserved for ISO use and the value shall be set to zero;
-    // however, conforming readers shall ignore the value of this field.
-    //
-    // This field is specified as a signed 1 byte integer
+    /// Precedence.
+    ///
+    /// This field is reserved for ISO use and the value shall be set to zero;
+    /// however, conforming readers shall ignore the value of this field.
+    ///
+    /// This field is specified as a signed 1 byte integer
     pub fn precedence(&self) -> i8 {
         self.precedence[0] as i8
     }
 
-    // Colourspace approximation.
-    //
-    // This field specifies the extent to which this colour specification method
-    // approximates the “correct” definition of the colourspace.
-    //
-    // The value of this field shall be set to zero; however, conforming readers
-    // shall ignore the value of this field.
-    //
-    // Other values are reserved forother ISO use.
-    // This field is specified as 1 byte unsigned integer.
+    /// Colourspace approximation.
+    ///
+    /// This field specifies the extent to which this colour specification method
+    /// approximates the “correct” definition of the colourspace.
+    ///
+    /// The value of this field shall be set to zero; however, conforming readers
+    /// shall ignore the value of this field.
+    ///
+    /// Other values are reserved for other ISO use.
+    /// This field is specified as 1 byte unsigned integer.
     pub fn colourspace_approximation(&self) -> u8 {
         self.colourspace_approximation[0]
     }
 
-    // Enumerated colourspace.
-    //
-    // This field specifies the colourspace of the image using integer codes.
-    //
-    // To correctly interpret the colour of an image using an enumerated
-    // colourspace, the application must know the definition of that
-    // colourspace internally.
-    //
-    // This field contains a 4-byte big endian unsigned integer value
-    // indicating the colourspace of the image.
-    //
-    // If the value of the METH field is 2, then the EnumCSfield shall not exist.
-    pub fn enumerated_colour_space(&self) -> Option<u32> {
-        Some(u32::from_be_bytes(self.enumerated_colour_space))
+    /// Enumerated colourspace.
+    ///
+    /// This field specifies the colourspace of the image using integer codes.
+    ///
+    /// To correctly interpret the colour of an image using an enumerated
+    /// colourspace, the application must know the definition of that
+    /// colourspace internally.
+    ///
+    /// This field contains a 4-byte big endian unsigned integer value
+    /// indicating the colourspace of the image.
+    ///
+    /// If the value of the METH field is 2, then this field shall not exist.
+    pub fn enumerated_colour_space(&self) -> Option<EnumeratedColourSpaces> {
+        if self.method() == ColourSpecificationMethods::EnumeratedColourSpace {
+            Some(EnumeratedColourSpaces::new(self.enumerated_colour_space))
+        } else {
+            None
+        }
+    }
+
+    /// Restricted ICC colourspace.
+    ///
+    /// This field contains a valid ICC profile, as specified in the ICC Profile
+    /// Format Specification, which specifies the transformation of the decompressed
+    /// image data into the PCS.
+    ///
+    /// If the value of the METH field is 1, then this field shall not exist.
+    ///
+    /// If the value of the METH field is 2, then the ICC profile shall conform to
+    /// the Monochrome Input Profile class, the Three-Component Matrix-Based Input
+    /// Profile class, the Monochrome Display profile type, or the Three-Component
+    /// Matrix-Based Display profile type as defined in ISO 15076-1.
+    pub fn restricted_icc_profile(&self) -> Option<&Vec<u8>> {
+        if self.method() == ColourSpecificationMethods::RestrictedICCProfile {
+            Some(&self.restricted_icc_profile)
+        } else {
+            None
+        }
     }
 }
 
@@ -1694,9 +1773,9 @@ impl JBox for ColourSpecificationBox {
             //
             // If the value of METH is 2, then the PROFILE field shall immediately follow the APPROX field and the PROFILE field shall be the last field in the box.
             ColourSpecificationMethods::RestrictedICCProfile => {
-                let mut restricted_icc_profile: Vec<u8> = vec![0; self.length as usize - 3];
+                self.restricted_icc_profile = vec![0; self.length as usize - 3];
 
-                reader.read_exact(&mut restricted_icc_profile)?;
+                reader.read_exact(&mut self.restricted_icc_profile)?;
                 debug!("Restricted ICC Profile");
             }
 

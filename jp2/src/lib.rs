@@ -2219,16 +2219,24 @@ impl JBox for DataEntryURLBox {
     }
 }
 
-// I.5.4
-//
-// Contiguous Codestream box
-//
-// The Contiguous Codestream box contains a valid and complete JPEG 2000
-// codestream. When displaying the image, a conforming reader shall ignore all
-// codestreams after the first codestream found in the file.
-//
-// Contiguous Codestream boxes may be found anywhere in the file
-// except before the JP2 Header box.
+/// Contiguous Codestream box
+///
+/// The Contiguous Codestream box contains a valid and complete JPEG 2000
+/// codestream. When displaying the image, a conforming T.800 | ISO/IEC 15444-1
+/// reader shall ignore all codestreams after the first codestream found in the file.
+///
+/// Note: there can be other codestream boxes, and this is valid in some extensions
+/// in T.801 | ISO/IEC 15444-2.
+///
+/// Contiguous Codestream boxes may be found anywhere in the file
+/// except before the JP2 Header box.
+///
+/// The intention is that this box provides the information required to get the
+/// codestream data, rather than holding the entire codestream. If the codestream
+/// is required, seek to the codestream offset, and read up the codestream length
+/// number of bytes.
+///
+/// See T.800 | ISO/IEC 15444-1 Section I.5.4.
 #[derive(Debug, Default)]
 pub struct ContiguousCodestreamBox {
     length: u64,

@@ -1053,3 +1053,112 @@ fn test_res_boxes() {
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
+
+#[test]
+fn test_hirise_modified() {
+    // HIRISE image of Mars.
+    // Original image is from https://www.uahirise.org/catalog/
+    // Replaced the body of the codestream with a single 0x00 byte to make size reasonable
+    // Tests UUID info box (and child boxes)
+
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("hirise_modified.jp2");
+    let file = File::open(path).expect("file should exist");
+    let mut reader = BufReader::new(file);
+    let result = decode_jp2(&mut reader);
+    assert!(result.is_ok());
+    let boxes = result.unwrap();
+    assert!(boxes.length() > 0);
+
+    assert!(boxes.signature_box().is_some());
+    assert!(boxes.file_type_box().is_some());
+    assert!(boxes.header_box().is_some());
+    let header_box = boxes.header_box().as_ref().unwrap();
+    let image_header_box = &header_box.image_header_box;
+    assert_eq!(image_header_box.height(), 16754);
+    assert_eq!(image_header_box.width(), 4246);
+    assert_eq!(image_header_box.components_num(), 3);
+    assert_eq!(image_header_box.compression_type(), 7);
+    assert_eq!(image_header_box.colourspace_unknown(), 1);
+    assert_eq!(image_header_box.intellectual_property(), 0);
+    assert_eq!(image_header_box.components_bits(), 10);
+    assert_eq!(image_header_box.values_are_signed(), false);
+
+    assert!(header_box.bits_per_component_box.is_none());
+
+    assert_eq!(header_box.colour_specification_boxes.len(), 1);
+    let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+    assert_eq!(
+        colour_specification_box.method(),
+        ColourSpecificationMethods::EnumeratedColourSpace,
+    );
+    assert_eq!(colour_specification_box.precedence(), 0);
+    assert_eq!(colour_specification_box.colourspace_approximation(), 0u8);
+    assert!(colour_specification_box.enumerated_colour_space().is_some());
+    assert_eq!(
+        colour_specification_box.enumerated_colour_space().unwrap(),
+        EnumeratedColourSpaces::sRGB,
+    );
+
+    assert!(header_box.palette_box.is_none());
+
+    assert!(header_box.component_mapping_box.is_none());
+
+    assert!(header_box.channel_definition_box.is_none());
+
+    assert!(header_box.resolution_box.is_none());
+
+    assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
+    let codestream_box = boxes.contiguous_codestreams_boxes().first().unwrap();
+    assert!(codestream_box.length() > 0);
+    assert!(codestream_box.offset() > 0);
+    assert_eq!(boxes.xml_boxes().len(), 0);
+    assert_eq!(boxes.uuid_boxes().len(), 1);
+    let uuid = boxes.uuid_boxes().first().unwrap();
+    assert_eq!(uuid.length(), 515);
+    // The UUID is for GeoJP2
+    assert_eq!(
+        *uuid.uuid(),
+        [
+            0xb1, 0x4b, 0xf8, 0xbd, 0x08, 0x3d, 0x4b, 0x43, 0xa5, 0xae, 0x8c, 0xd7, 0xd5, 0xa6,
+            0xce, 0x03
+        ]
+    );
+    // The body is a degenerate GeoTIFF file, starts with TIFF signature
+    assert_eq!(uuid.data()[0], b'I');
+    assert_eq!(uuid.data()[1], b'I');
+    assert_eq!(uuid.data().len(), 499);
+
+    assert_eq!(boxes.uuid_info_boxes().len(), 1);
+    let uuid_info = boxes.uuid_info_boxes().first().unwrap();
+    assert!(uuid_info.uuid_list_box().is_some());
+    assert!(uuid_info.data_entry_url_box().is_some());
+    /* jyplyzer results:
+            <uuidInfoBox>
+            <uuidListBox>
+                <nU>1</nU>
+                <uuid>2b0d7e97-aa2e-317d-9a33-e53161a2f7d0</uuid>
+            </uuidListBox>
+            <urlBox>
+                <version>0</version>
+                <loc>ESP_053795_1905_COLOR.LBL</loc>
+            </urlBox>
+        </uuidInfoBox>
+    */
+    let ulst = uuid_info.uuid_list_box().as_ref().unwrap();
+    assert_eq!(ulst.number_of_uuids(), 1);
+    assert_eq!(ulst.ids().len(), 1);
+    assert_eq!(
+        *ulst.ids().first().unwrap(),
+        [
+            0x2b, 0x0d, 0x7e, 0x97, 0xaa, 0x2e, 0x31, 0x7d, 0x9a, 0x33, 0xe5, 0x31, 0x61, 0xa2,
+            0xf7, 0xd0
+        ]
+    );
+    let url = uuid_info.data_entry_url_box().as_ref().unwrap();
+    assert_eq!(url.version(), 0);
+    assert_eq!(*url.flags(), [0u8, 0u8, 0u8]);
+    assert!(url.location().is_ok());
+    assert_eq!(url.location().unwrap(), "ESP_053795_1905_COLOR.LBL");
+}

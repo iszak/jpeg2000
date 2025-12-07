@@ -2121,8 +2121,26 @@ impl JBox for UUIDBox {
 pub struct UUIDInfoSuperBox {
     length: u64,
     offset: u64,
-    uuid_list: Vec<UUIDListBox>,
-    data_entry_url_box: Vec<DataEntryURLBox>,
+    uuid_list: Option<UUIDListBox>,
+    data_entry_url_box: Option<DataEntryURLBox>,
+}
+
+impl UUIDInfoSuperBox {
+    /// UUID List box (UList).
+    ///
+    /// This box contains a list of UUIDs for which this UUID Info box specifies
+    /// a link to more information.
+    pub fn uuid_list_box(&self) -> &Option<UUIDListBox> {
+        &self.uuid_list
+    }
+
+    /// Data Entry IRL box (DE).
+    ///
+    /// This box contains a URL. An application can acquire more information
+    /// about the UUIDs contained in the UUID List box.
+    pub fn data_entry_url_box(&self) -> &Option<DataEntryURLBox> {
+        &self.data_entry_url_box
+    }
 }
 
 impl JBox for UUIDInfoSuperBox {
@@ -2178,14 +2196,11 @@ pub struct UUIDListBox {
 }
 
 impl UUIDListBox {
-    fn ids(&self) -> Vec<&str> {
-        self.ids
-            .iter()
-            .map(|id| str::from_utf8(id).unwrap())
-            .collect()
+    pub fn ids(&self) -> &Vec<[u8; 16]> {
+        &self.ids
     }
-    fn number_of_uuids(&self) -> i16 {
-        i16::from_be_bytes(self.number_of_uuids)
+    pub fn number_of_uuids(&self) -> u16 {
+        u16::from_be_bytes(self.number_of_uuids)
     }
 }
 
@@ -2271,8 +2286,38 @@ pub struct DataEntryURLBox {
 }
 
 impl DataEntryURLBox {
-    fn location(&self) -> Result<&str, str::Utf8Error> {
-        str::from_utf8(&self.location)
+    /// Version (VERS).
+    ///
+    /// This field specifies the version number of the format of this box and is
+    /// encoded as a 1-byte unsigned integer.
+    ///
+    /// The value of this field shall be 0.
+    pub fn version(&self) -> u8 {
+        self.version[0]
+    }
+
+    /// Flags (FLAG).
+    ///
+    /// This field is reserved for other uses to flag particular attributes of
+    /// this box and is encoded as a 3-byte unsigned integer.
+    ///
+    /// The value of this field shall be 0 (`0x00 0x00 0x00`).
+    pub fn flags(&self) -> &[u8; 3] {
+        &self.flags
+    }
+
+    /// Location (LOC).
+    ///
+    /// This field specifies the URL of the additional information associated
+    /// with the UUIDs contained in the UUID List box within the same UUID Info
+    /// superbox.
+    ///
+    /// The URL is encoded as a null terminated string of ISO/IEC 646 (effectively ASCII)
+    /// characters, but this accessor function converts it a standard Rust string without
+    /// the null terminator.
+    pub fn location(&self) -> Result<&str, str::Utf8Error> {
+        let ascii = str::from_utf8(&self.location)?;
+        Ok(ascii.trim_matches(char::from(0)))
     }
 }
 
@@ -2614,6 +2659,7 @@ pub struct JP2File {
     intellectual_property: Option<IntellectualPropertyBox>,
     xml: Vec<XMLBox>,
     uuid: Vec<UUIDBox>,
+    uuid_info: Vec<UUIDInfoSuperBox>,
 }
 
 impl JP2File {
@@ -2653,6 +2699,14 @@ impl JP2File {
     }
     pub fn uuid_boxes(&self) -> &Vec<UUIDBox> {
         &self.uuid
+    }
+
+    /// UUID Info boxes associated with this file.
+    ///
+    /// These boxes provide a tool by which a vendor may provide access to
+    /// additional information associated with a UUID.
+    pub fn uuid_info_boxes(&self) -> &Vec<UUIDInfoSuperBox> {
+        &self.uuid_info
     }
 }
 
@@ -2886,7 +2940,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 uuid_list_box.decode(reader)?;
                 match &mut current_uuid_info_box {
                     Some(uuid_info_box) => {
-                        uuid_info_box.uuid_list.push(uuid_list_box);
+                        uuid_info_box.uuid_list = Some(uuid_list_box);
                     }
                     None => {
                         return Err(JP2Error::BoxMissing {
@@ -2912,7 +2966,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 data_entry_url_box.decode(reader)?;
                 match &mut current_uuid_info_box {
                     Some(uuid_info_box) => {
-                        uuid_info_box.data_entry_url_box.push(data_entry_url_box)
+                        uuid_info_box.data_entry_url_box = Some(data_entry_url_box);
                     }
                     None => {
                         return Err(JP2Error::BoxMissing {
@@ -2972,6 +3026,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
         intellectual_property: intellectual_property_option,
         xml: xml_boxes,
         uuid: uuid_boxes,
+        uuid_info: uuid_info_boxes,
     };
 
     Ok(result)

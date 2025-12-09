@@ -892,34 +892,34 @@ impl JBox for ImageHeaderBox {
     }
 }
 
-// I.5.3.6
-//
-// Channel Definition Box
-//
-// The Channel Definition box specifies the meaning of the samples in each
-// channel in the image. The exact location of this box within the JP2 Header
-// box may vary provided that it follows the Image Header box.
-//
-// The mapping between actual components from the codestream to channels is
-// specified in the Component Mapping box.
-//
-// If the JP2 Header box does not contain a Component Mapping box, then a
-// reader shall map component i to channel i, for all components in
-// the codestream.
-//
-// This box contains an array of channel descriptions. For each description,
-// three values are specified:
-// - the index of the channel described by that association
-// - the type of that channel
-// - and the association of that channel with particular colours.
-//
-// This box may specify multiple descriptions for a single channel; however,
-// the type value in each description for the same channel shall be the same in
-// all descriptions.
-//
-// If a multiple component transform is specified within the codestream, the
-// image must be in an RGB colourspace and the red, green and blue colours as
-// channels 0, 1 and 2 in the codestream, respectively.
+/// Channel Definition Box.
+///
+/// The Channel Definition box specifies the meaning of the samples in each
+/// channel in the image. The exact location of this box within the JP2 Header
+/// box may vary provided that it follows the Image Header box.
+///
+/// The mapping between actual components from the codestream to channels is
+/// specified in the Component Mapping box.
+///
+/// If the JP2 Header box does not contain a Component Mapping box, then a
+/// reader shall map component _i_ to channel _i_, for all components in
+/// the codestream.
+///
+/// This box contains an array of channel descriptions. For each description,
+/// three values are specified:
+/// - the index of the channel described by that association
+/// - the type of that channel
+/// - and the association of that channel with particular colours.
+///
+/// This box may specify multiple descriptions for a single channel; however,
+/// the type value in each description for the same channel shall be the same in
+/// all descriptions.
+///
+/// If a multiple component transform is specified within the codestream, the
+/// image must be in an RGB colourspace and the red, green and blue colours as
+/// channels 0, 1 and 2 in the codestream, respectively.
+///
+/// For more information, see ISO/IEC 15444-1 / ITU T-800 Appendix I.5.3.6
 #[derive(Debug, Default)]
 pub struct ChannelDefinitionBox {
     length: u64,
@@ -928,11 +928,19 @@ pub struct ChannelDefinitionBox {
 }
 
 impl ChannelDefinitionBox {
+    /// Channels in the Channel Definition box.
+    ///
+    /// The order of channels in the returned vector is the order of channels
+    /// in the box. Note the Component Mapping box may map these to a different
+    /// order to the components in the bitstream.
     pub fn channels(&self) -> &Vec<Channel> {
         &self.channels
     }
 }
 
+/// Channel information.
+///
+/// This represents one channel within the Channel Definition box.
 #[derive(Debug, Default)]
 pub struct Channel {
     // Channel index
@@ -943,7 +951,7 @@ pub struct Channel {
     // within the Component Mapping box (or the actual component from the
     // codestream if the file does not contain a Component Mapping box).
     //
-    // This field isencoded as a 2-byte big endian unsigned integer.
+    // This field is encoded as a 2-byte big endian unsigned integer.
     channel_index: [u8; 2],
 
     // Channel type
@@ -952,7 +960,7 @@ pub struct Channel {
     // The value of this field specifies the meaning of the decompressed
     // samples in this channel.
     //
-    // This field is encoded as a 2-byte bigendian unsigned integer.
+    // This field is encoded as a 2-byte big endian unsigned integer.
     channel_type: [u8; 2],
 
     // Channel association
@@ -968,18 +976,44 @@ pub struct Channel {
 }
 
 impl Channel {
+    /// Channel index (Cn<sup>i</sup>).
+    ///
+    /// This field specifies the index of the channel for this description.
+    ///
+    /// The value of this field represents the index of the channel as defined
+    /// within the Component Mapping box (or the actual component from the
+    /// codestream if the file does not contain a Component Mapping box).
     pub fn channel_index(&self) -> u16 {
         u16::from_be_bytes(self.channel_index)
     }
 
+    /// Channel type (Typ<sup>i</sup>).
+    ///
+    /// This field specifies the type of the channel for this description.
+    /// The value of this field specifies the meaning of the decompressed
+    /// samples in this channel.
     pub fn channel_type(&self) -> ChannelTypes {
         ChannelTypes::new(self.channel_type)
     }
 
+    /// Channel type (Typ<sup>i</sup>) as unsigned value.
+    ///
+    /// This field specifies the type of the channel for this description.
+    /// The value of this field specifies the meaning of the decompressed
+    /// samples in this channel.
     pub fn channel_type_u16(&self) -> u16 {
         u16::from_be_bytes(self.channel_type)
     }
 
+    /// Channel association (Asoc<sup>i</sup>).
+    ///
+    /// This field specifies the index of the colour for which this channel is
+    /// directly associated (or a special value to indicate the whole image or
+    /// the lack of an association).
+    ///
+    /// For example, if this channel is an opacity channel for the red channel
+    /// in an RGB colourspace, this field would specify the index of the colour
+    /// red.
     // TODO: Map channel association based on colourspace (Table I-18)
     pub fn channel_association(&self) -> u16 {
         u16::from_be_bytes(self.channel_association)
@@ -994,12 +1028,38 @@ const CHANNEL_TYPE_COLOUR_IMAGE_DATA: u16 = 0;
 const CHANNEL_TYPE_OPACITY_DATA: u16 = 1;
 const CHANNEL_TYPE_PREMULTIPLIED_OPACITY: u16 = 3;
 
+/// Channel types.
+///
+/// For more information, see ISO/IEC 15444-1 / ITU T-800 Table I.16.
 #[derive(Debug, PartialEq)]
 pub enum ChannelTypes {
+    /// Colour image data (0).
+    ///
+    /// This channel is the colour image data for the associated colour.
     ColourImageData,
+
+    /// Opacity (1).
+    ///
+    /// A sample value of 0 indicates that the sample is 100% transparent and the maximum value of the
+    /// channel (related to the bit depth of the codestream component or the related palette component
+    /// mapped to this channel) indicates a 100% opaque sample. All opacity channels shall be mapped
+    /// from unsigned components.
     Opacity,
+
+    /// Premultiplied opacity (2).
+    ///
+    /// Premultiplied opacity. An opacity channel as specified above, except that the value of the
+    /// opacity channel has been multiplied into the colour channels for which this channel is associated.
     PremultipliedOpacity,
+
+    /// Reserved.
+    ///
+    /// A range of values reserved for ITU-T | ISO/IEC use.
     Reserved { value: u16 },
+
+    /// Unspecified.
+    ///
+    /// Ths type of this channel is not specified.
     Unspecified { value: u16 },
 }
 

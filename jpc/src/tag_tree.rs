@@ -61,7 +61,7 @@ impl TagTreeDecoder {
     }
 
     // TODO fix push_bit type signature for better return type
-    fn push_bit(&mut self, b: u8) -> Option<u8> {
+    pub fn push_bit(&mut self, b: u8) -> Option<u8> {
         if b == 0 {
             self.cur_value += 1;
             return None;
@@ -80,6 +80,11 @@ impl TagTreeDecoder {
             );
             return None;
         }
+        if self.cur_depth == 0 && self.max_depth == 0 {
+            // handle single value tag tree... todo might be nicer some where else
+            return Some(self.cur_value);
+        }
+
         // record out and walk up tree to maintain invariants
         let out = self.cur_value;
 

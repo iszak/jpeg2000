@@ -2235,13 +2235,6 @@ pub struct UUIDListBox {
     length: u64,
     offset: u64,
 
-    // NU: Number of UUIDs.
-    //
-    // This field specifies the number of UUIDs found in this UUID List box.
-    //
-    // This field is encoded as a 2-byte big-endian unsigned integer.
-    number_of_uuids: [u8; 2],
-
     // IDs.
     //
     // Each instance of this field specifies one UUID, as specified in ISO/IEC 11578, which
@@ -2260,7 +2253,7 @@ impl UUIDListBox {
         &self.ids
     }
     pub fn number_of_uuids(&self) -> u16 {
-        u16::from_be_bytes(self.number_of_uuids)
+        self.ids().len() as u16
     }
 }
 
@@ -2282,9 +2275,10 @@ impl JBox for UUIDListBox {
         &mut self,
         reader: &mut R,
     ) -> Result<(), Box<dyn error::Error>> {
-        reader.read_exact(&mut self.number_of_uuids)?;
+        let mut number_of_uuids = [0u8; 2];
+        reader.read_exact(&mut number_of_uuids)?;
 
-        let mut size = self.number_of_uuids() as usize;
+        let mut size = u16::from_be_bytes(number_of_uuids) as usize;
 
         self.ids = Vec::with_capacity(size);
 

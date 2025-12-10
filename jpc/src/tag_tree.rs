@@ -80,7 +80,7 @@ impl TagTreeDecoder {
             );
             return None;
         }
-        if self.cur_depth == 0 && self.max_depth == 0 {
+        if self.max_depth == 0 {
             // handle single value tag tree... todo might be nicer some where else
             return Some(self.cur_value);
         }
@@ -116,6 +116,16 @@ impl TagTreeDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_oner() {
+        // Test a one item tree
+        let mut tt = TagTreeDecoder::new(1, 1);
+        assert_eq!(0, tt.max_depth);
+        assert!(tt.push_bit(0).is_none());
+        assert!(tt.push_bit(0).is_none());
+        assert_eq!(Some(2), tt.push_bit(1));
+    }
 
     #[test]
     fn test_basic() {

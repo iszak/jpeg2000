@@ -6,15 +6,58 @@ use std::fmt;
 use std::io;
 use std::str;
 
+/// Error values that may be returned from JP2 functions.
 #[derive(Debug)]
 pub enum JP2Error {
+    /// Invalid signature.
+    ///
+    /// The signature box did not match the required value.
+    /// This usually means that the file is not JPEG 2000
+    /// file format. It could be a codestream without the Annex I
+    /// wrapper.
     InvalidSignature { signature: [u8; 4], offset: u64 },
+
+    /// Invalid brand.
+    ///
+    /// The major brand did not match a supported value.
     InvalidBrand { brand: [u8; 4], offset: u64 },
+
+    /// Unsupported feature.
+    ///
+    /// At this time only JPEG 2000 part 1 (i.e. ISO/IEC 15444-1 | ITU T.800)
+    /// is supported.
     Unsupported,
+
+    /// Not compatible.
+    ///
+    /// The compatible brands did not contain a supported brand.
+    /// At this time, at least `'jp2 '` is required.
     NotCompatible { compatibility_list: Vec<String> },
+
+    /// Unexpected box type.
+    ///
+    /// An unsupported box was encountered during parsing.
+    /// At this time only JPEG 2000 part 1 (i.e. ISO/IEC 15444-1 | ITU T.800)
+    /// is supported.
     BoxUnexpected { box_type: BoxType, offset: u64 },
+
+    /// Duplicate box.
+    ///
+    /// Some boxes are only permitted to be present once in the file.
+    /// If the same kind of box is encountered later in the parsing, this
+    /// error will be returned.
     BoxDuplicate { box_type: BoxType, offset: u64 },
+
+    /// Malformed box.
+    ///
+    /// This indicates that the box was not in the expected form. Usually
+    /// this indicates some form of truncation during generation or in transit.
     BoxMalformed { box_type: BoxType, offset: u64 },
+
+    /// Missing box.
+    ///
+    /// Some boxes are required to be present. If a required
+    /// box is not present, this error will be returned.
     BoxMissing { box_type: BoxType },
 }
 

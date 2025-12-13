@@ -432,53 +432,52 @@ impl JBox for FileTypeBox {
     }
 }
 
-// I.5.3
-//
-// JP2 Header Box
-//
-// The JP2 Header box contains generic information about the file, such as
-// number of components, colourspace, and grid resolution.
-//
-// This box is a superbox.
-// This box contains several boxes.
-//
-// Within a JP2 file, there shall be one and only one JP2 Header box.
-//
-// Other boxes may be defined in other standards and may be ignored by
-// conforming readers. Those boxes contained within the JP2 Header box that are
-// defined within this Recommendation | InternationalStandard are as follows:
-
-// - Image Header box - This box specifies information about the image, such
-// as its height and width.
-//
-// - Bits Per Component box - This box specifies the bit depth of each
-// component in the codestream after decompression. This box may be found
-// anywhere in the JP2 Header box provided that it comes after the Image Header
-// box.
-//
-// - Colour Specification boxes - These boxes specify the colourspace of the
-// decompressed image. The use of multiple Colour Specification boxes
-// provides the ability for a decoder to be given multiple optimization or
-// compatibility options for colour processing. These boxes may be found
-// anywhere in the JP2 Header box provided that they come after the Image Header
-// box. All Colour Specification boxes shall be contiguous within the JP2 Header
-// box.
-//
-// - Palette box - This box defines the palette to use to create multiple
-// components from a single component. This box may be found anywhere in the JP2
-// Header box provided that it comes after the Image Header box.
-//
-// - Component Mapping box - This box defines how image channels are identified
-// from the actual components in the codestream. This box may be found anywhere
-// in the JP2 Header box provided that it comes after the Image Header box.
-//
-// - Channel Definition box - This box defines the channels in the image. This
-// box may be found anywhere in the JP2 Header box provided that it comes after
-// the ImageHeader box.
-//
-// - Resolution box - This box specifies the capture and default display grid
-// resolutions of the image. This box may be found anywhere in the JP2 Header
-// box provided that it comes after the Image Header box.
+/// JP2 Header Box.
+///
+/// The JP2 Header box contains generic information about the file, such as
+/// number of components, colourspace, and grid resolution.
+///
+/// This box is a superbox. That is, it is a container for other boxes.
+///
+/// Within a JP2 file, there shall be one and only one JP2 Header box.
+///
+/// Other boxes may be defined in other standards and may be ignored by
+/// conforming readers. Those boxes contained within the JP2 Header box that are
+/// defined within ISO/IEC 15444-1 | ITU T-800 are as follows:
+///
+/// - Image Header box - This box specifies information about the image, such
+/// as its height and width.
+///
+/// - Bits Per Component box - This box specifies the bit depth of each
+/// component in the codestream after decompression. This box may be found
+/// anywhere in the JP2 Header box provided that it comes after the Image Header
+/// box.
+///
+/// - Colour Specification boxes - These boxes specify the colourspace of the
+/// decompressed image. The use of multiple Colour Specification boxes
+/// provides the ability for a decoder to be given multiple optimization or
+/// compatibility options for colour processing. These boxes may be found
+/// anywhere in the JP2 Header box provided that they come after the Image Header
+/// box. All Colour Specification boxes shall be contiguous within the JP2 Header
+/// box.
+///
+/// - Palette box - This box defines the palette to use to create multiple
+/// components from a single component. This box may be found anywhere in the JP2
+/// Header box provided that it comes after the Image Header box.
+///
+/// - Component Mapping box - This box defines how image channels are identified
+/// from the actual components in the codestream. This box may be found anywhere
+/// in the JP2 Header box provided that it comes after the Image Header box.
+///
+/// - Channel Definition box - This box defines the channels in the image. This
+/// box may be found anywhere in the JP2 Header box provided that it comes after
+/// the ImageHeader box.
+///
+/// - Resolution box - This box specifies the capture and default display grid
+/// resolutions of the image. This box may be found anywhere in the JP2 Header
+/// box provided that it comes after the Image Header box.
+///
+/// For more information, see ISO/IEC 15444-1 | ITU T-800 Appendix I.5.3.
 #[derive(Debug, Default)]
 pub struct HeaderSuperBox {
     length: u64,
@@ -718,29 +717,29 @@ impl JBox for HeaderSuperBox {
 
 const COMPRESSION_TYPE_WAVELET: u8 = 7;
 
-// I.5.3.1
-//
-// Image Header box
-//
-// This box contains fixed length generic information about the image, such as
-// the image size and number of components.
-//
-// The contents of the JP2 Header box shall start with an Image Header box.
-//
-// The length of the Image Header box shall be 22 bytes, including the box
-// length and type fields.
-//
-// Much of the information within the Image Header box is redundant with
-// information stored in the codestream itself.
-//
-// All references to “the codestream” in the descriptions of fields in this
-// Image Header box apply to the codestream found in the first Contiguous
-// Codestream box in the file.
-//
-// Files that contain contradictory information between the Image Headerbox and
-// the first codestream are not conforming files. However, readers may choose
-// to attempt to read these files by using the values found within the
-// codestream.
+/// Image Header box.
+///
+/// This box contains fixed length generic information about the image, such as
+/// the image size and number of components.
+///
+/// The contents of the JP2 Header box shall start with an Image Header box.
+///
+/// The length of the Image Header box shall be 22 bytes, including the box
+/// length and type fields.
+///
+/// Much of the information within the Image Header box is redundant with
+/// information stored in the codestream itself.
+///
+/// All references to “the codestream” in the descriptions of fields in this
+/// Image Header box apply to the codestream found in the first Contiguous
+/// Codestream box in the file.
+///
+/// Files that contain contradictory information between the Image Header box and
+/// the first codestream are not conforming files. However, readers may choose
+/// to attempt to read these files by using the values found within the
+/// codestream.
+///
+/// For more information, see ISO/IEC 15444-1 | ITU T-800 Appendix I.5.3.1.
 #[derive(Debug, Default)]
 pub struct ImageHeaderBox {
     length: u64,
@@ -755,47 +754,47 @@ pub struct ImageHeaderBox {
 }
 
 impl ImageHeaderBox {
-    // Image area height.
-    //
-    // The value of this parameter indicates the height of the image area.
-    // This field is stored as a 4-byte big endian unsigned integer.
-    //
-    // The value of this field shall be Ysiz – YOsiz, where Ysiz and YOsiz are
-    // the values of the respective fields in the SIZ marker in the codestream.
-    //
-    // However, reference grid points are not necessarily square; the aspect
-    // ratio of a reference grid point is specified by the Resolution box.
-    //
-    // If the Resolution box is not present, then a reader shall assume that
-    // reference grid points are square.
+    /// Image area height (HEIGHT).
+    ///
+    /// The value of this parameter indicates the height of the image area.
+    /// This field is stored as a 4-byte big endian unsigned integer.
+    ///
+    /// The value of this field shall be Ysiz – YOsiz, where Ysiz and YOsiz are
+    /// the values of the respective fields in the SIZ marker in the codestream.
+    ///
+    /// However, reference grid points are not necessarily square; the aspect
+    /// ratio of a reference grid point is specified by the Resolution box.
+    ///
+    /// If the Resolution box is not present, then a reader shall assume that
+    /// reference grid points are square.
     pub fn height(&self) -> u32 {
         u32::from_be_bytes(self.height)
     }
 
-    // Image area width.
-    //
-    // The value of this parameter indicates the width of the image area.
-    // This field is stored as a 4-byte big endian unsigned integer.
-    //
-    // The value of this field shall be Xsiz – XOsiz, where Xsiz and XOsiz are
-    // the values of the respective fields in the SIZ marker in the codestream.
-    //
-    // However, reference grid points are not necessarily square; the aspect
-    // ratio of a reference grid point is specified by the Resolution box.
-    //
-    // If the Resolution box is not present, then a reader shall assume that
-    // reference grid points are square
+    /// Image area width (WIDTH).
+    ///
+    /// The value of this parameter indicates the width of the image area.
+    /// This field is stored as a 4-byte big endian unsigned integer.
+    ///
+    /// The value of this field shall be Xsiz – XOsiz, where Xsiz and XOsiz are
+    /// the values of the respective fields in the SIZ marker in the codestream.
+    ///
+    /// However, reference grid points are not necessarily square; the aspect
+    /// ratio of a reference grid point is specified by the Resolution box.
+    ///
+    /// If the Resolution box is not present, then a reader shall assume that
+    /// reference grid points are square
     pub fn width(&self) -> u32 {
         u32::from_be_bytes(self.width)
     }
 
-    // Number of components.
-    //
-    // This parameter specifies the number of components in the codestream and
-    // is stored as a 2-byte big endian unsigned integer.
-    //
-    // The value of this field shall be equal to the value of the Csiz field in
-    // the SIZ marker in the codestream.
+    /// Number of components (NC).
+    ///
+    /// This parameter specifies the number of components in the codestream and
+    /// is stored as a 2-byte big endian unsigned integer.
+    ///
+    /// The value of this field shall be equal to the value of the Csiz field in
+    /// the SIZ marker in the codestream.
     pub fn components_num(&self) -> u16 {
         u16::from_be_bytes(self.components_num)
     }
@@ -838,7 +837,7 @@ impl ImageHeaderBox {
         }
     }
 
-    /// Signedness of the values
+    /// Signedness of the values.
     ///
     /// See [components_bits](fn@ImageHeaderBox::components_bits) for the BPC encoding.
     ///
@@ -852,54 +851,58 @@ impl ImageHeaderBox {
         }
     }
 
-    // Compression type.
-    //
-    // This parameter specifies the compression algorithm used to compress the
-    // image data.
-    //
-    // The value of this field shall be 7.
-    // It is encoded as a 1-byte unsigned integer.
-    // Other values are reserved for ISO use.
+    /// Compression type (C).
+    ///
+    /// This parameter specifies the compression algorithm used to compress the
+    /// image data.
+    ///
+    /// The value of this field shall be 7 for ITU-T T.800 | ISO/IEC 15444-1 conformant files.
+    /// Other values are reserved for ISO use, and there are other values that
+    /// can be found in files conforming to other standards, including ITU-T T.801 | ISO/IEC 15444-2.
+    ///
+    /// It is encoded as a 1-byte unsigned integer.
     pub fn compression_type(&self) -> u8 {
         self.compression_type[0]
     }
 
-    // Colourspace Unknown.
-    //
-    // This field specifies if the actual colourspace of the image data in the
-    // codestream is known.
-    //
-    // This field is encoded as a 1-byte unsigned integer.
-    //
-    // Legal values for this field are 0, if the colourspace of the image is
-    // known and correctly specified in the Colourspace Specification boxes
-    // within the file, or 1, if the colourspace of the image is not known.
-    //
-    // A value of 1 will be used in cases such as the transcoding of legacy
-    // images where the actual colourspace of the image data is not known.
-    //
-    // In those cases, while the colourspace interpretation methods specified
-    // in the file may not accurately reproduce the image with respect to some
-    // original, the image should be treated as if the methods do accurately
-    // reproduce the image.
-    //
-    // Values other than 0 and 1 are reserved for ISO use.
+    /// Colourspace Unknown (UnkC).
+    ///
+    /// This field specifies if the actual colourspace of the image data in the
+    /// codestream is known.
+    ///
+    // /This field is encoded as a 1-byte unsigned integer.
+    ///
+    /// Legal values for this field are 0, if the colourspace of the image is
+    /// known and correctly specified in the Colourspace Specification boxes
+    /// within the file, or 1, if the colourspace of the image is not known.
+    ///
+    /// A value of 1 will be used in cases such as the transcoding of legacy
+    /// images where the actual colourspace of the image data is not known.
+    ///
+    /// In those cases, while the colourspace interpretation methods specified
+    /// in the file may not accurately reproduce the image with respect to some
+    /// original, the image should be treated as if the methods do accurately
+    /// reproduce the image.
+    ///
+    /// Values other than 0 and 1 are reserved for ISO use. There are no other
+    /// values in ITU-T T.801 | ISO/IEC 15444-2 for this field.
     pub fn colourspace_unknown(&self) -> u8 {
         self.colourspace_unknown[0]
     }
 
-    // Intellectual Property.
-    //
-    // This parameter indicates whether this JP2 file contains intellectual
-    // property rights information.
-    //
-    // If the value of this field is 0, this file does not contain rights
-    // information, and thus the file does not contain an IPR box.
-    //
-    // If the value is 1, then the file does contain rights information and
-    // thus does contain an IPR box.
-    //
-    // Other values are reserved for ISO use.
+    /// Intellectual Property.
+    ///
+    /// This parameter indicates whether this JP2 file contains intellectual
+    /// property rights information.
+    ///
+    /// If the value of this field is 0, this file does not contain rights
+    /// information, and thus the file does not contain an IPR box.
+    ///
+    /// If the value is 1, then the file does contain rights information and
+    /// thus does contain an IPR box.
+    ///
+    /// Other values are reserved for ISO use. There are no other
+    /// values in ITU-T T.801 | ISO/IEC 15444-2 for this field.
     pub fn intellectual_property(&self) -> u8 {
         self.intellectual_property[0]
     }
@@ -2746,6 +2749,30 @@ impl JBox for CaptureResolutionBox {
     }
 }
 
+/// JP2 file format instance.
+///
+/// This structure models the JP2 file format defined in ITU-T T.800 | ISO/IEC 15444-1
+/// Annex I. Each instance of this structure is conceptually equal to a file.
+///
+/// From ITU-T T.800 (V4) | ISO/IEC 15444-1:2024, Section I.2:
+///
+/// > The JPEG 2000 file format (JP2 file format) provides a foundation for storing application
+/// > specific data (metadata) in association with a JPEG 2000 codestream, such as information
+/// > which is required to display the image. As many applications require a similar set of
+/// > information to be associated with the compressed image data, it is useful to define the
+/// > format of that set of data along with the definition of the compression technology and
+/// > codestream syntax.
+///
+/// > Conceptually, the JP2 file format encapsulates the JPEG 2000 codestream along with
+/// > other core pieces of information about that codestream. The building-block of the JP2
+/// > file format is called a box. All information contained within the JP2 file is encapsulated
+/// > in boxes. This Recommendation | International Standard defines several types of boxes;
+/// > the definition of each specific box type defines the kinds of information that may
+/// > be found within a box of that type. Some boxes will be defined to contain other boxes.
+///
+/// The box structure used in the JP2 file format is (intentionally) very similar to the
+/// ISO Base Media File Format (ISO/IEC 14496-12), which is used to encapsulate video in
+/// MPEG 4 (ISO/IEC 14496-14) and HEIF (ISO/IEC 23008-12) amongst other uses.
 #[derive(Debug)]
 pub struct JP2File {
     length: u64,
@@ -2763,15 +2790,45 @@ impl JP2File {
     pub fn length(&self) -> u64 {
         self.length
     }
+
+    /// JPEG 2000 Signature box.
+    ///
+    /// This box uniquely identifies the file as being part of the JPEG 2000 family of files.
+    ///
+    /// This box is required.
     pub fn signature_box(&self) -> &Option<SignatureBox> {
         &self.signature
     }
+
+    /// File Type box.
+    ///
+    /// This box specifies file type, version and compatibility information, including
+    /// specifying if this file is a conforming JP2 file or if it can be read by a
+    /// conforming JP2 reader.
+    ///
+    /// This box is required.
     pub fn file_type_box(&self) -> &Option<FileTypeBox> {
         &self.file_type
     }
+
+    /// JP2 Header box.
+    ///
+    /// This box contains a series of boxes that contain header-type information
+    /// about the file.
+    ///
+    /// This box is required.
     pub fn header_box(&self) -> &Option<HeaderSuperBox> {
         &self.header
     }
+
+    /// Contiguous codestream boxes.
+    ///
+    /// This box contains the codestream as defined by ITU-T T.800 | ISO/IEC 15444-1 Annex A.
+    ///
+    /// This box is required. It can be present multiple times. ITU-T T.800 | ISO/IEC 15444-1
+    /// readers shall ignore the codestream boxes after the first box. However there is
+    /// use of additional boxes in ITU-T T.801 | ISO/IEC 15444-2 and potentially other
+    /// standards and profiles.
     pub fn contiguous_codestreams_boxes(&self) -> &Vec<ContiguousCodestreamBox> {
         &self.contiguous_codestreams
     }
@@ -2791,9 +2848,22 @@ impl JP2File {
         &self.intellectual_property
     }
 
+    /// XML boxes.
+    ///
+    /// An XML box provides a tool by which vendors can add XML formatted information to
+    /// a JP2 file.
+    ///
+    /// This box is not required, and can be present multiple times.
     pub fn xml_boxes(&self) -> &Vec<XMLBox> {
         &self.xml
     }
+
+    /// UUID boxes.
+    ///
+    /// This box provides a tool by which vendors can add additional information to a file
+    /// without risking conflict with other vendors.
+    ///
+    /// This box is not required, and can be present multiple times.
     pub fn uuid_boxes(&self) -> &Vec<UUIDBox> {
         &self.uuid
     }

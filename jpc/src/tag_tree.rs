@@ -1,4 +1,4 @@
-use log::info;
+use log::{debug, info};
 
 /// A tag tree represents a 2d-array of natural numbers.
 ///
@@ -21,6 +21,7 @@ pub struct TagTreeDecoder {
     cur_value: u8,
     /// levels is a Vec containing data (width, items) for each level of the tree.
     levels: Vec<(usize, Vec<u8>)>, // Todo, what should be here?
+    item_count: usize,
 }
 
 impl TagTreeDecoder {
@@ -29,59 +30,62 @@ impl TagTreeDecoder {
         let mut mh = height;
         let mut max_depth = 0;
         let mut levels = Vec::new();
-        // Determine max depth by dividing out groups of 4
+        // Determine max depth by dividing out groups of 2x2==4
         while mw > 1 || mh > 1 {
             let w = mw.max(1);
             let size: usize = w * mh.max(1);
             levels.push((w, Vec::with_capacity(size)));
-            println!("added vec of size {size}");
+            debug!("added vec of size {size}");
             max_depth += 1;
             mw = mw.div_ceil(2);
             mh = mh.div_ceil(2);
         }
         levels.push((1, Vec::with_capacity(1)));
         levels.reverse(); // reverse in place so level 0 is at index 0
-        println!("Need a depth of {max_depth} to represent tag tree");
-
+        info!("Need a depth of {max_depth} to represent tag tree");
         assert_eq!(max_depth + 1, levels.len());
-
         Self {
             max_depth,
             cur_depth: 0,
             cur_value: 0,
             levels,
+            item_count: width * height,
         }
     }
 
     fn cur_offset(&self) -> usize {
         match self.levels.get(self.cur_depth) {
             None => panic!("Not deep enough to know current location."),
-            Some((cw, clvl)) => clvl.len(),
+            Some((_cw, clvl)) => clvl.len(),
         }
     }
 
     // TODO fix push_bit type signature for better return type
-    pub fn push_bit(&mut self, b: u8) -> Option<u8> {
+    pub fn push_bit(&mut self, bit: bool) -> Option<u8> {
+        let b: u8 = bit as u8;
         if b == 0 {
             self.cur_value += 1;
             return None;
         }
         assert_eq!(1, b);
         // b == 1, record value at current position, prep return value, go to next position
-        let (_, lvl) = &mut self.levels[self.cur_depth];
+        let (lvl_width, lvl) = &mut self.levels[self.cur_depth];
+        info!(
+            "Recorded q_{}({},{})={}",
+            self.cur_depth,
+            (lvl.len()) % *lvl_width,
+            (lvl.len()) / *lvl_width,
+            self.cur_value
+        );
         lvl.push(self.cur_value);
         // maintain cur_value and cur_depth to point at next position to fill
         if self.cur_depth < self.max_depth {
             // deeper!
             self.cur_depth += 1;
-            info!(
-                "Recorded {} now at depth {}",
-                self.cur_value, self.cur_depth
-            );
             return None;
         }
-        if self.max_depth == 0 {
-            // handle single value tag tree... todo might be nicer some where else
+        if self.levels.last()?.1.len() == self.item_count {
+            // Done with tree
             return Some(self.cur_value);
         }
 
@@ -117,77 +121,163 @@ impl TagTreeDecoder {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_oner() {
-        // Test a one item tree
-        let mut tt = TagTreeDecoder::new(1, 1);
-        assert_eq!(0, tt.max_depth);
-        assert!(tt.push_bit(0).is_none());
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(2), tt.push_bit(1));
+    fn init_logger() {
+        let _ = env_logger::builder()
+            .is_test(true)
+            .filter_level(log::LevelFilter::Info)
+            .try_init();
     }
 
     #[test]
-    fn test_basic() {
-        // Test basic tag tree from B.10.2
+    fn test_oner() {
+        init_logger();
+        // Test a one item tree
+        let mut tt = TagTreeDecoder::new(1, 1);
+        assert_eq!(0, tt.max_depth);
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true));
+    }
+
+    /// If given too many bits for the tree the TagTreeDecoder currently just panics
+    #[test]
+    #[should_panic]
+    fn test_too_many_bits() {
+        init_logger();
+        // Test a one item tree
+        let mut tt = TagTreeDecoder::new(1, 1);
+        assert_eq!(0, tt.max_depth);
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true));
+        tt.push_bit(true);
+    }
+
+    /// Test a two level tree, max_depth == 1.
+    ///
+    /// Level 1
+    /// ┌────────┬────────┐
+    /// │   1    │   1    │
+    /// │ q₁(0,0)│ q₁(1,0)│
+    /// ├────────┼────────┤
+    /// │   2    │   2    │
+    /// └────────┴────────┘
+    ///
+    /// Level 0 (Root - Minimum of entire tree):
+    /// ┌─────────────────┐
+    /// │        1        │
+    /// │    q₀(0,0)      │
+    /// └─────────────────┘
+    #[test]
+    fn test_two_level() {
+        init_logger();
+        let mut tt = TagTreeDecoder::new(2, 2);
+        assert_eq!(1, tt.max_depth);
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(true).is_none()); // Set q0(0,0) == 1
+        assert_eq!(Some(1), tt.push_bit(true));
+        assert_eq!(Some(1), tt.push_bit(true));
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true));
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true));
+    }
+
+    /// Test basic tag tree from B.10.2
+    /// Level 3 (Original array of numbers):
+    /// ┌───┬───┬───┬───┬───┬───┐
+    /// │ 1 │ 3 │ 2 │ 3 │ 2 │ 3 │
+    /// │q₃ │q₃ │q₃ │   │   │   │
+    /// │0,0│1,0│2,0│   │   │   │
+    /// ├───┼───┼───┼───┼───┼───┤
+    /// │ 2 │ 2 │ 1 │ 4 │ 3 │ 2 │
+    /// ├───┼───┼───┼───┼───┼───┤
+    /// │ 2 │ 2 │ 2 │ 2 │ 1 │ 2 │
+    /// └───┴───┴───┴───┴───┴───┘
+    ///
+    /// Level 2 (Minimum of 2x2 blocks from Level 3):
+    /// ┌────────┬────────┬───────┐
+    /// │   1    │   1    │   2   │
+    /// │ q₂(0,0)│ q₂(1,0)│       │
+    /// ├────────┼────────┼───────┤
+    /// │   2    │   2    │   1   │
+    /// └────────┴────────┴───────┘
+    ///
+    /// Level 1 (Minimum of 2x2 blocks from Level 2):
+    /// ┌───────────────┬───────────────┐
+    /// │       1       │       1       │
+    /// │    q₁(0,0)    │               │
+    /// └───────────────┴───────────────┘
+    ///
+    /// Level 0 (Root - Minimum of entire tree):
+    /// ┌───────────────────────────────┐
+    /// │               1               │
+    /// │           q₀(0,0)             │
+    /// └───────────────────────────────┘
+    ///
+    /// Each level represents the minimum value of a 2x2 block
+    /// (or smaller at boundaries) from the level below.
+    #[test]
+    fn test_given_example() {
+        init_logger();
         let mut tt = TagTreeDecoder::new(6, 3);
 
         assert_eq!(3, tt.max_depth);
 
-        assert!(tt.push_bit(0).is_none()); // 0.0,0 inc -> 1
-        assert!(tt.push_bit(1).is_none()); // set 0. 0,0 = 1
-        assert!(tt.push_bit(1).is_none()); // set 1. 0,0 = 1
-        assert!(tt.push_bit(1).is_none()); // set 2. 0,0 = 1
-        assert_eq!(Some(1), tt.push_bit(1)); // set 3. 0,0 = 1, ret
-                                             //
-        assert!(tt.push_bit(0).is_none()); // inc -> 2
-        assert!(tt.push_bit(0).is_none()); // inc -> 3
-        assert_eq!(Some(3), tt.push_bit(1)); // set 3. 1,0 = 3
-                                             //
-        assert!(tt.push_bit(1).is_none()); // set 2.1,0 = 1
-        assert!(tt.push_bit(0).is_none()); // inc -> 2
-        assert_eq!(Some(2), tt.push_bit(1)); // set 3.2,0 = 2
-                                             //
-        assert!(tt.push_bit(0).is_none()); // inc -> 2
-        assert!(tt.push_bit(0).is_none()); // inc -> 3
-        assert_eq!(Some(3), tt.push_bit(1)); // set 3.3,0 = 3
+        assert!(tt.push_bit(false).is_none()); // 0.0,0 inc -> 1
+        assert!(tt.push_bit(true).is_none()); // set 0. 0,0 = 1
+        assert!(tt.push_bit(true).is_none()); // set 1. 0,0 = 1
+        assert!(tt.push_bit(true).is_none()); // set 2. 0,0 = 1
+        assert_eq!(Some(1), tt.push_bit(true)); // set 3. 0,0 = 1, ret
+                                                //
+        assert!(tt.push_bit(false).is_none()); // inc -> 2
+        assert!(tt.push_bit(false).is_none()); // inc -> 3
+        assert_eq!(Some(3), tt.push_bit(true)); // set 3. 1,0 = 3
+                                                //
+        assert!(tt.push_bit(true).is_none()); // set 2.1,0 = 1
+        assert!(tt.push_bit(false).is_none()); // inc -> 2
+        assert_eq!(Some(2), tt.push_bit(true)); // set 3.2,0 = 2
+                                                //
+        assert!(tt.push_bit(false).is_none()); // inc -> 2
+        assert!(tt.push_bit(false).is_none()); // inc -> 3
+        assert_eq!(Some(3), tt.push_bit(true)); // set 3.3,0 = 3
 
-        assert!(tt.push_bit(1).is_none()); // set 1,1,0 = 1
-        assert!(tt.push_bit(0).is_none()); // inc -> 2
-        assert!(tt.push_bit(1).is_none()); // set 2,2,0 = 2
-        assert_eq!(Some(2), tt.push_bit(1)); // set 3.4,0 = 2
+        assert!(tt.push_bit(true).is_none()); // set 1,1,0 = 1
+        assert!(tt.push_bit(false).is_none()); // inc -> 2
+        assert!(tt.push_bit(true).is_none()); // set 2,2,0 = 2
+        assert_eq!(Some(2), tt.push_bit(true)); // set 3.4,0 = 2
 
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(3), tt.push_bit(1)); // 3,5,0
-
-        // Next row
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,0,1
-
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,1,1
-
-        assert_eq!(Some(1), tt.push_bit(1)); // 3,2,1
-        assert!(tt.push_bit(0).is_none());
-        assert!(tt.push_bit(0).is_none());
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(4), tt.push_bit(1)); // 3,3,1
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(3), tt.push_bit(1)); // 3,4,1
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,5,1
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(3), tt.push_bit(true)); // 3,5,0
 
         // Next row
-        assert!(tt.push_bit(0).is_none());
-        assert!(tt.push_bit(1).is_none()); // 2,0,1
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,0,2
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,1,2
-        assert!(tt.push_bit(0).is_none());
-        assert!(tt.push_bit(1).is_none()); // 2,1,1
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,2,2
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,3,2
-        assert!(tt.push_bit(1).is_none()); // 2,2,1
-        assert_eq!(Some(1), tt.push_bit(1)); // 3,4,2
-        assert!(tt.push_bit(0).is_none());
-        assert_eq!(Some(2), tt.push_bit(1)); // 3,5,2
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,0,1
+
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,1,1
+
+        assert_eq!(Some(1), tt.push_bit(true)); // 3,2,1
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(4), tt.push_bit(true)); // 3,3,1
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(3), tt.push_bit(true)); // 3,4,1
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,5,1
+
+        // Next row
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(true).is_none()); // 2,0,1
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,0,2
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,1,2
+        assert!(tt.push_bit(false).is_none());
+        assert!(tt.push_bit(true).is_none()); // 2,1,1
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,2,2
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,3,2
+        assert!(tt.push_bit(true).is_none()); // 2,2,1
+        assert_eq!(Some(1), tt.push_bit(true)); // 3,4,2
+        assert!(tt.push_bit(false).is_none());
+        assert_eq!(Some(2), tt.push_bit(true)); // 3,5,2
     }
 }

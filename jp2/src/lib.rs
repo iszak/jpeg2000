@@ -1186,28 +1186,33 @@ impl JBox for ChannelDefinitionBox {
 const COMPONENT_MAP_TYPE_DIRECT: [u8; 1] = [1];
 const COMPONENT_MAP_TYPE_PALETTE: [u8; 1] = [2];
 
+/// Type of component mapping.
+///
+/// The Component Mapping box supports both direct mapping and indirect
+/// (palette) mapping. This enumeration represents which kind of
+/// mapping is used.
 #[derive(Debug)]
 pub enum ComponentMapType {
-    // Direct use.
-    //
-    // This channel is created directly from an actual component in the
-    // codestream.
-    // The index of the component mapped to this channel is specified in the
-    // CMPi field for this channel.
+    /// Direct use.
+    ///
+    /// This channel is created directly from an actual component in the
+    /// codestream.
+    /// The index of the component mapped to this channel is specified in the
+    /// CMP<sup>i</sup> field for this channel.
     Direct,
 
-    // Palette mapping.
-    //
-    // This channel is created by applying the palette to an actual component
-    // in the codestream.
-    //
-    // The index of the component mapped into the palette is specified in the
-    // CMPi field for this channel.
-    // The column from the palette to use is specified in the PCOLi field for
-    // this channel
+    /// Palette mapping.
+    ///
+    /// This channel is created by applying the palette to an actual component
+    /// in the codestream.
+    ///
+    /// The index of the component mapped into the palette is specified in the
+    /// CMP<sup>i</sup> field for this channel.
+    /// The column from the palette to use is specified in the PCOL<sup>i</sup>
+    /// field for this channel.
     Palette,
 
-    // Reserved for ISO use
+    /// Reserved for ITU-T | ISO/IEC use.
     Reserved { value: [u8; 1] },
 }
 
@@ -1222,6 +1227,10 @@ impl ComponentMapType {
 }
 
 #[derive(Debug)]
+/// Component map entry.
+///
+/// The Component Mapping box contains a sequence of mapping entries. This
+/// structure models one entry.
 pub struct ComponentMap {
     // This field specifies the index of component from the codestream that is
     // mapped to this channel (either directly or through a palette).
@@ -1244,9 +1253,22 @@ pub struct ComponentMap {
 }
 
 impl ComponentMap {
+    /// Component index (CMP<sup>i</sup>).
+    ///
+    /// This field specifies the index of component from the codestream that is
+    /// mapped to this channel (either directly or through a palette).
+    ///
+    /// This field is encoded as a 2-byte big endian unsigned integer, and
+    /// is represented here as an unsigned integer value.
     pub fn component(&self) -> u16 {
         u16::from_be_bytes(self.component)
     }
+
+    /// Mapping type (MTYP<sup>i</sup>).
+    ///
+    /// This specifies how this channel is generated from the actual
+    /// components in the file. This field is encoded as a 1-byte unsigned
+    /// integer, and represented here as an enumerated value.
     pub fn mapping_type(&self) -> u8 {
         match self.mapping_type {
             ComponentMapType::Direct => COMPONENT_MAP_TYPE_DIRECT[0],
@@ -1254,6 +1276,15 @@ impl ComponentMap {
             ComponentMapType::Reserved { value } => value[0],
         }
     }
+
+    /// Palette column index (PCOL<sup>i</sup>).
+    ///
+    /// This specifies the index component from the palette that is used
+    /// to map the actual component from the codestream.
+    /// This field is encoded as a 1-byte unsigned integer.
+    ///
+    /// If the value of the MTYP<sup>i</sup> field for this channel is 0, then the value of
+    /// this field shall be 0.
     pub fn palette(&self) -> u8 {
         self.palette[0]
     }
@@ -1283,9 +1314,9 @@ impl ComponentMap {
 /// If the JP2 Header box does not contain a Palette box, then the JP2 Header box
 /// shall not contain a Component Mapping box.
 /// In this case, the components shall be mapped directly to channels, such that
-/// component i is mapped to channel i.
+/// component _i_ is mapped to channel _i_.
 ///
-/// See ISO/IEC 15444-1:2024 Section I.5.3.5.
+/// See ITU T.800 (V4) | ISO/IEC 15444-1:2024 Section I.5.3.5.
 #[derive(Debug, Default)]
 pub struct ComponentMappingBox {
     length: u64,

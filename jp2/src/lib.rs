@@ -1,5 +1,22 @@
 #![allow(dead_code)]
 
+//! JP2 file format.
+//!
+//! The JPEG 2000 file format (JP2 file format) provides a foundation for storing application specific data (metadata) in
+//! association with a JPEG 2000 codestream, such as information which is required to display the image. As many
+//! applications require a similar set of information to be associated with the compressed image data, it is useful to define the
+//! format of that set of data along with the definition of the compression technology and codestream syntax.
+//!
+//! Conceptually, the JP2 file format encapsulates the JPEG 2000 codestream along with other core pieces of information
+//! about that codestream. The building-block of the JP2 file format is called a box. All information contained within the JP2
+//! file is encapsulated in boxes. ITU T.800 | ISO/IEC 15444-1 defines several types of boxes; the definition of each specific
+//! box type defines the kinds of information that may be found within a box of that type. Some boxes will be defined to contain other boxes.
+//!
+//! In addition, some boxes are extended, and new boxes are defined in other standards, such as ITU T.801 | ISO/IEC 15444-2.
+//!
+//! The main entry point for this module is the `decode_jp2` function. That reads from the provided input, and returns a `JP2File` on success,
+//! or an error on failure.
+
 use log::{debug, info, warn};
 use std::error;
 use std::fmt;
@@ -446,36 +463,36 @@ impl JBox for FileTypeBox {
 /// defined within ISO/IEC 15444-1 | ITU T-800 are as follows:
 ///
 /// - Image Header box - This box specifies information about the image, such
-/// as its height and width.
+///   as its height and width.
 ///
 /// - Bits Per Component box - This box specifies the bit depth of each
-/// component in the codestream after decompression. This box may be found
-/// anywhere in the JP2 Header box provided that it comes after the Image Header
-/// box.
+///   component in the codestream after decompression. This box may be found
+///   anywhere in the JP2 Header box provided that it comes after the Image Header
+///   box.
 ///
 /// - Colour Specification boxes - These boxes specify the colourspace of the
-/// decompressed image. The use of multiple Colour Specification boxes
-/// provides the ability for a decoder to be given multiple optimization or
-/// compatibility options for colour processing. These boxes may be found
-/// anywhere in the JP2 Header box provided that they come after the Image Header
-/// box. All Colour Specification boxes shall be contiguous within the JP2 Header
-/// box.
+///   decompressed image. The use of multiple Colour Specification boxes
+///   provides the ability for a decoder to be given multiple optimization or
+///   compatibility options for colour processing. These boxes may be found
+///   anywhere in the JP2 Header box provided that they come after the Image Header
+///   box. All Colour Specification boxes shall be contiguous within the JP2 Header
+///   box.
 ///
 /// - Palette box - This box defines the palette to use to create multiple
-/// components from a single component. This box may be found anywhere in the JP2
-/// Header box provided that it comes after the Image Header box.
+///   components from a single component. This box may be found anywhere in the JP2
+///   Header box provided that it comes after the Image Header box.
 ///
 /// - Component Mapping box - This box defines how image channels are identified
-/// from the actual components in the codestream. This box may be found anywhere
-/// in the JP2 Header box provided that it comes after the Image Header box.
+///   from the actual components in the codestream. This box may be found anywhere
+///   in the JP2 Header box provided that it comes after the Image Header box.
 ///
 /// - Channel Definition box - This box defines the channels in the image. This
-/// box may be found anywhere in the JP2 Header box provided that it comes after
-/// the ImageHeader box.
+///   box may be found anywhere in the JP2 Header box provided that it comes after
+///   the Image Header box.
 ///
 /// - Resolution box - This box specifies the capture and default display grid
-/// resolutions of the image. This box may be found anywhere in the JP2 Header
-/// box provided that it comes after the Image Header box.
+///   resolutions of the image. This box may be found anywhere in the JP2 Header
+///   box provided that it comes after the Image Header box.
 ///
 /// For more information, see ISO/IEC 15444-1 | ITU T-800 Appendix I.5.3.
 #[derive(Debug, Default)]

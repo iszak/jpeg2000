@@ -2962,7 +2962,14 @@ impl ContiguousCodestream {
                         reader.seek(io::SeekFrom::Current(-2))?;
                         break;
                     }
-                    _ => panic!(),
+                    _ => {
+                        log::error!("unexpected marker type: {marker_type:?}");
+                        return Err(CodestreamError::MarkerUnexpected {
+                            marker: marker_type,
+                            offset: reader.stream_position()? - 2,
+                        }
+                        .into());
+                    }
                 },
 
                 Err(e) => return Err(e.into()),
@@ -3058,7 +3065,11 @@ impl ContiguousCodestream {
                     }
                     MARKER_SYMBOL_SOT => {
                         // A.4.4
-                        todo!();
+                        return Err(CodestreamError::UnsupportedFeature {
+                            marker: MARKER_SYMBOL_EPH,
+                            offset: reader.stream_position()? - 2,
+                        }
+                        .into());
                     }
                     _ => {
                         // TODO: See J.10.3 Packet headers

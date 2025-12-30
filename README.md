@@ -123,3 +123,18 @@ Reference decoding can be obtained by using other jpeg 2000 parsing tools, such 
 opj_dump -v -i samples/file1.jp2
 jpylyzer --verbose samples/file1.jp2
 ```
+
+
+### Running Compliance Tests
+
+The project includes an optional compliance test suite that uses external reference data (~130MB).
+
+To run compliance tests:
+```bash
+cargo test --features compliance-tests
+```
+
+The test data will be automatically downloaded and cached on first run. The download requires `curl` and `unzip` to be installed.
+
+**Note:** The cached data persists through `cargo clean`. To force a re-download, delete the `compliance-data-cache/` directory.
+

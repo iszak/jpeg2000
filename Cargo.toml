@@ -6,5 +6,8 @@ members = [
   "jpxml",
   "jpeg2000"
 ]
+exclude = [
+  "compliance-data-cache/"
+]
 
 default-members = ["jpeg2000"]

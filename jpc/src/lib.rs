@@ -3066,7 +3066,7 @@ impl ContiguousCodestream {
                     MARKER_SYMBOL_SOT => {
                         // A.4.4
                         return Err(CodestreamError::UnsupportedFeature {
-                            marker: MARKER_SYMBOL_EPH,
+                            marker: MARKER_SYMBOL_SOT,
                             offset: reader.stream_position()? - 2,
                         }
                         .into());

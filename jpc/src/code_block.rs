@@ -3,11 +3,26 @@ use log::{debug, info};
 use crate::coder::{Decoder, RUN_LEN, UNIFORM};
 use crate::shared::SubBandType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Coeff {
     // TODO i16 is probably wrong, might need generic
     Significant { value: i16, is_negative: bool },
     Insignificant(u8), // Insignificant at what bit-plane shift
+}
+
+impl Coeff {
+    /// contribution to sign context -> -1, 0, 1
+    ///
+    /// ITU-T T.800(V4) | ISO/IEC 15444-1:2024 Table D.2
+    fn sign_contribution(&self) -> i8 {
+        match self {
+            Coeff::Insignificant(_) => 0,
+            Coeff::Significant { is_negative, .. } => match is_negative {
+                true => -1,
+                false => 1,
+            },
+        }
+    }
 }
 
 struct CodeBlockDecodeError {}
@@ -33,16 +48,13 @@ struct CoeffIndex {
 
 impl CodeBlockDecoder {
     fn new(width: i32, height: i32, subband: SubBandType, no_passes: u8, mb: u8) -> Self {
-        let no_coeff: usize = (width * height) as usize;
-        let mut coeffs_vec = Vec::with_capacity(no_coeff);
-        coeffs_vec.resize_with(no_coeff, || Coeff::Insignificant(u8::MAX));
         Self {
             width,
             height,
             subband,
             no_passes,
             bit_plane_shift: mb - 1,
-            coefficients: coeffs_vec,
+            coefficients: vec![Coeff::Insignificant(u8::MAX); (width * height) as usize],
         }
     }
 
@@ -384,6 +396,8 @@ impl CodeBlockDecoder {
     }
 
     /// Determine the context for sign bit decoding
+    ///
+    /// ITU-T T.800(V4) | ISO/IEC 15444-1:2024 section D.3.2
     fn sign_context(&self, idx: CoeffIndex) -> (usize, u8) {
         let CoeffIndex { x, y } = idx;
 
@@ -394,25 +408,30 @@ impl CodeBlockDecoder {
 
         debug!("v0 {v0:?} v1 {v1:?} h0 {v1:?} h1 {h1:?}");
 
-        fn sp(c: &Coeff) -> i8 {
-            match c {
-                Coeff::Insignificant(_) => 0,
-                Coeff::Significant { is_negative, .. } => 1 - 2 * (*is_negative as i8),
+        /// Add up the contribution to a -1,0,1
+        fn contribution(a: &Coeff, b: &Coeff) -> i8 {
+            let total = a.sign_contribution() + b.sign_contribution();
+            match total {
+                1 | 2 => 1,
+                0 => 0,
+                -1 | -2 => -1,
+                _ => panic!("Total should be in range -2..=2"),
             }
         }
-        fn c(a: &Coeff, b: &Coeff) -> i8 {
-            let t = sp(a) + sp(b);
-            match t {
-                _ if t > 0 => 1,
-                _ if t < 0 => -1,
-                _ => 0,
-            }
-        }
-        debug!("sign context vert {}, {}", sp(v0), sp(v1));
-        debug!("sign context horz {}, {}", sp(h0), sp(h1));
+        debug!(
+            "sign context vert {}, {}",
+            v0.sign_contribution(),
+            v1.sign_contribution()
+        );
+        debug!(
+            "sign context horz {}, {}",
+            h0.sign_contribution(),
+            h1.sign_contribution()
+        );
 
-        let vc = c(v0, v1);
-        let hc = c(h0, h1);
+        let vc = contribution(v0, v1);
+        let hc = contribution(h0, h1);
+        // ITU-T T.800(V4) | ISO/IEC 15444-1:2024 Table D.3
         let (ctx, xor) = match (hc, vc) {
             (1, 1) => (13, 0),
             (1, 0) => (12, 0),

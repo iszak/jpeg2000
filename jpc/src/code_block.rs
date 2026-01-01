@@ -84,7 +84,8 @@ impl CodeBlockDecoder {
 
     /// Handle a cleanup pass
     ///
-    /// CleanUp does cleanup and sign coding
+    /// Cleanup does cleanup and sign coding.
+    /// See ITU-T T.800(V4) | ISO/IEC 15444-1:2024 Section D.3.4
     fn pass_cleanup(&mut self, coder: &mut dyn Decoder) {
         // Iterate coefficients in strips 4 tall across full width
         for by in (0..self.height).step_by(4) {
@@ -97,6 +98,7 @@ impl CodeBlockDecoder {
                     count_insig += (!self.is_significant(CoeffIndex { y, x })) as i32;
                 }
 
+                // Decision D8: Are four contiguous undecoded coefficients in a column each with a 0 context?
                 let d8 = 4 == count_insig;
                 if d8 {
                     // All Insignificant, determine first significant
@@ -143,6 +145,7 @@ impl CodeBlockDecoder {
         }
         info!("completed cleanup pass");
     }
+
     /// Handle a significance propagation pass
     fn pass_significance(&mut self, coder: &mut dyn Decoder) {
         // Iterate coefficients in strips 4 tall across full width
@@ -237,7 +240,8 @@ impl CodeBlockDecoder {
         );
 
         // Compute context based on subband and neighbor counts
-        // Different formulas for HL, LH, HH subbands
+        // Different formulas for LL / LH (vertical high pass), HL (horizontal high pass), HH (diagonal high pass) subbands
+        // ITU-T T.800 | ISO/IEC 15444-1 Table D.1
         match self.subband {
             SubBandType::LL | SubBandType::LH => match (h, v, d) {
                 (0, 0, 0) => 0,
@@ -335,7 +339,7 @@ impl CodeBlockDecoder {
         decoder: &mut dyn Decoder,
     ) -> bool {
         let sig = decoder.decode_bit(cx);
-        debug!("significance {} for {:?}", sig, idx);
+        debug!("significance {sig} for {idx:?}");
         if sig == 1 {
             self.make_significant(idx);
             true
@@ -388,7 +392,7 @@ impl CodeBlockDecoder {
         let h0 = self.coeff_at(CoeffIndex { y, x: x - 1 });
         let h1 = self.coeff_at(CoeffIndex { y, x: x + 1 });
 
-        debug!("v0 {:?} v1 {:?} h0 {:?} h1 {:?}", v0, v1, h0, h1);
+        debug!("v0 {v0:?} v1 {v1:?} h0 {v1:?} h1 {h1:?}");
 
         fn sp(c: &Coeff) -> i8 {
             match c {

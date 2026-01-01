@@ -1,8 +1,6 @@
 //! MQ-Coder: Arithmetic Entropy Coding for JPEG2000
 //! Implementation based on ISO/IEC 15444-1:2019 Annex C
 
-use log::{debug, info};
-
 /// Probability estimation state table entry
 #[derive(Debug, Clone, Copy)]
 struct QeEntry {

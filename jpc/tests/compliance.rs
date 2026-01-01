@@ -30,6 +30,7 @@ fn test_data_load() {
 #[test]
 fn test_parse_p0_j2k_files() {
     let files = [
+        // (Expect parse?, file_name)
         (true, "./input/conformance/p0_01.j2k"),
         (false, "./input/conformance/p0_02.j2k"),
         (false, "./input/conformance/p0_03.j2k"),
@@ -74,6 +75,7 @@ fn test_parse_p0_j2k_files() {
 #[test]
 fn test_parse_p1_j2k_files() {
     let files = [
+        // (Expect parse?, file_name)
         (true, "./input/conformance/p1_01.j2k"),
         (true, "./input/conformance/p1_02.j2k"),
         (false, "./input/conformance/p1_03.j2k"),

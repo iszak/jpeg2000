@@ -268,6 +268,7 @@ fn encode_colour_specification_box<W: io::Write>(
     writer: &mut W,
     colour_specification_box: &ColourSpecificationBox,
 ) -> Result<(), Box<dyn error::Error>> {
+    let method = colour_specification_box.method();
     writeln!(
         writer,
         "    <xjp:colr type=\"box\" length=\"{}\" offset=\"{}\">",
@@ -277,7 +278,7 @@ fn encode_colour_specification_box<W: io::Write>(
     writeln!(
         writer,
         "      <xjp:method length=\"1\" type=\"integer\">{}</xjp:method>",
-        colour_specification_box.method().encoded_meth()[0]
+        method.encoded_meth()[0]
     )?;
     writeln!(
         writer,
@@ -289,20 +290,14 @@ fn encode_colour_specification_box<W: io::Write>(
         "      <xjp:approx length=\"1\" type=\"integer\">{}</xjp:approx>",
         colour_specification_box.colourspace_approximation()
     )?;
-    match colour_specification_box.method() {
-        jp2::colour_specification::ColourSpecificationMethods::EnumeratedColourSpace { code } => {
-            let methdat = code.encoded_methdat();
-            writeln!(
-                writer,
-                "    <xjp:data length=\"{}\" type=\"hexbyte\">{}</xjp:data>",
-                methdat.len(),
-                to_hex(methdat.iter())?
-            )?;
-        }
-        _ => {
-            // TODO - can we just use the methdat on the method() for all cases?
-        }
-    }
+    // TODO: add support for enumerated and vendor colourspace elements in T.813 A.3.3
+    let methdat = method.encoded_methdat();
+    writeln!(
+        writer,
+        "      <xjp:colour length=\"{}\" type=\"hexbyte\">{}</xjp:colour>",
+        methdat.len(),
+        to_hex(methdat.iter())?
+    )?;
     writer.write_all(b"    </xjp:colr>\n")?;
     Ok(())
 }

@@ -327,15 +327,8 @@
       </xs:simpleContent>
     </xs:complexType>
   </xs:element>
-  <!-- changed to int -->
-  <xs:element name="colour">
-    <xs:complexType>
-      <xs:simpleContent>
-        <xs:extension base="xs:integer">
-          <xs:attributeGroup ref="attrs.int"/>
-        </xs:extension>
-      </xs:simpleContent>
-    </xs:complexType>
+  <xs:element name="colour" type="hexbyte">
+    <xs:attributeGroup ref="attrs.hex" use="required" />
   </xs:element>
   <xs:element name="num_entries">
     <xs:complexType>

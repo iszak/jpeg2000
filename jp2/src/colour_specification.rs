@@ -127,7 +127,7 @@ impl ColourSpecificationMethods {
         }
     }
 
-    fn encoded_methdat(&self) -> Vec<u8> {
+    pub fn encoded_methdat(&self) -> Vec<u8> {
         match self {
             ColourSpecificationMethods::EnumeratedColourSpace { code } => code.encoded_methdat(),
             ColourSpecificationMethods::RestrictedICCProfile { profile_data } => {

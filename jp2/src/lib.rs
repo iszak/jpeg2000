@@ -18,6 +18,7 @@
 //! or an error on failure.
 
 pub mod colour_specification;
+pub mod extension;
 
 use log::{debug, info, warn};
 use std::error;
@@ -82,6 +83,21 @@ pub enum JP2Error {
     /// Some boxes are required to be present. If a required
     /// box is not present, this error will be returned.
     BoxMissing { box_type: BoxType },
+
+    /// Excessive size.
+    ///
+    /// This error indicates an unreasonably large value in box.
+    ///
+    /// For example, some fields have variable sizes that are signalled
+    /// by an earlier field values. If the expected length value is 1,
+    /// 2, 4 or 8 bytes, but a much larger number is found, this is
+    /// an appropriate error result.
+    ///
+    /// Such an error may indicate:
+    ///  - a corrupted file (e.g. broken on write or in transmission)
+    ///  - a maliciously corrupted file
+    ///  - a parsing error
+    ExcessiveSize { box_type: BoxType, offset: u64 },
 }
 
 impl error::Error for JP2Error {}
@@ -127,6 +143,11 @@ impl fmt::Display for JP2Error {
             Self::BoxMissing { box_type } => {
                 write!(f, "box type {:?} missing", box_type)
             }
+            Self::ExcessiveSize { box_type, offset } => write!(
+                f,
+                "excessively large value found in box type {:?} at offset {}",
+                box_type, offset
+            ),
             Self::Unsupported => {
                 write!(
                     f,
@@ -188,6 +209,9 @@ enum BoxTypes {
     UUIDInfo,
     UUIDList,
     DataEntryURL,
+    // See Part 2 M.11.1
+    ReaderRequirementsBox,
+
     Unknown,
 }
 
@@ -222,6 +246,9 @@ impl BoxTypes {
             BOX_TYPE_UUID_INFO => BoxTypes::UUIDInfo,
             BOX_TYPE_UUID_LIST => BoxTypes::UUIDList,
             BOX_TYPE_DATA_ENTRY_URL => BoxTypes::DataEntryURL,
+
+            extension::BOX_TYPE_READER_REQUIREMENTS => BoxTypes::ReaderRequirementsBox,
+
             _ => BoxTypes::Unknown,
         }
     }
@@ -420,9 +447,7 @@ impl JBox for FileTypeBox {
         reader: &mut R,
     ) -> Result<(), Box<dyn error::Error>> {
         reader.read_exact(&mut self.brand)?;
-        if self.brand == BRAND_JPX {
-            return Err(JP2Error::Unsupported {}.into());
-        } else if self.brand != BRAND_JP2 {
+        if !matches!(self.brand, BRAND_JP2 | BRAND_JPX) {
             return Err(JP2Error::InvalidBrand {
                 brand: self.brand,
                 offset: reader.stream_position()?,
@@ -2513,6 +2538,7 @@ pub struct JP2File {
     length: u64,
     signature: Option<SignatureBox>,
     file_type: Option<FileTypeBox>,
+    reader_requirements: Option<extension::ReaderRequirementsBox>,
     header: Option<HeaderSuperBox>,
     contiguous_codestreams: Vec<ContiguousCodestreamBox>,
     intellectual_property: Option<IntellectualPropertyBox>,
@@ -2533,6 +2559,18 @@ impl JP2File {
     /// This box is required.
     pub fn signature_box(&self) -> &Option<SignatureBox> {
         &self.signature
+    }
+
+    /// Reader requirements box (if any) associated with this file.
+    ///
+    /// This box specifies the different modes in which this file may be processed.
+    ///
+    /// This box will be None (not present) in ISO/IEC 15444-1 / T.800 files.
+    ///
+    /// This box will be Some (present) in ISO/IEC 15444-2 / T.801 files, to
+    /// specify what extension features or feature groups have been used.
+    pub fn reader_requirements_box(&self) -> &Option<extension::ReaderRequirementsBox> {
+        &self.reader_requirements
     }
 
     /// File Type box.
@@ -2736,6 +2774,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
     file_type_box.decode(reader)?;
     info!("FileTypeBox finish at {:?}", reader.stream_position()?);
 
+    let mut reader_requirements_box_option: Option<extension::ReaderRequirementsBox> = None;
     let mut header_box_option: Option<HeaderSuperBox> = None;
     let mut contiguous_codestream_boxes: Vec<ContiguousCodestreamBox> = vec![];
     let mut intellectual_property_option: Option<IntellectualPropertyBox> = None;
@@ -2905,6 +2944,21 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
                 contiguous_codestream_boxes.push(continuous_codestream_box);
             }
 
+            BoxTypes::ReaderRequirementsBox => {
+                let mut reader_requirements_box =
+                    extension::ReaderRequirementsBox::new(box_length, reader.stream_position()?);
+                info!(
+                    "ReaderRequirementsBox start at {:?}",
+                    reader_requirements_box.offset()
+                );
+                reader_requirements_box.decode(reader)?;
+                reader_requirements_box_option = Some(reader_requirements_box);
+                info!(
+                    "ReaderRequirementsBox finish at {:?}",
+                    reader.stream_position()?
+                );
+            }
+
             _ => {
                 panic!(
                     "Unexpected box type {:?} {:?}",
@@ -2923,6 +2977,7 @@ pub fn decode_jp2<R: io::Read + io::Seek>(
         length: reader.stream_position()?,
         signature: Some(signature_box),
         file_type: Some(file_type_box),
+        reader_requirements: reader_requirements_box_option,
         header: header_box_option,
         contiguous_codestreams: contiguous_codestream_boxes,
         intellectual_property: intellectual_property_option,

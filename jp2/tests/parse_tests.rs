@@ -2,7 +2,9 @@ use std::{fs::File, io::BufReader, path::Path};
 
 use jp2::{
     colour_specification::{ColourSpecificationMethods, EnumeratedColourSpaces},
-    decode_jp2, BitDepth, ChannelTypes, JBox as _, JP2File,
+    decode_jp2,
+    extension::{ExtensionFeatureRequirement, FeatureFlag},
+    BitDepth, ChannelTypes, JBox as _, JP2File,
 };
 
 struct ExpectedConfiguration {
@@ -184,32 +186,71 @@ fn test_sample_file4() {
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
 
-#[ignore = "uses unsupported Part 2 extensions"]
 #[test]
 fn test_sample_file5() {
-    let boxes = test_sample_jp2_file(
+    let boxes = test_sample_jpx_file(
         "file5.jp2",
         ExpectedConfiguration {
-            compatibility_list: vec!["\0\0\0\u{1}".into(), "jp2 ".into()],
-            width: 640,
-            height: 480,
+            compatibility_list: vec![
+                "\0\0\0\u{3}".into(),
+                "jp2 ".into(),
+                "jpx ".into(),
+                "jpbx".into(),
+            ],
+            width: 768,
+            height: 512,
             num_components: 3,
-            bit_depth: 16,
+            bit_depth: 8,
+            // fallback method for JPX
             colour_specification_method: ColourSpecificationMethods::EnumeratedColourSpace {
-                code: EnumeratedColourSpaces::sRGB,
+                code: EnumeratedColourSpaces::ROMMRGB,
             },
             has_unexpected_approx_set: true,
         },
     );
 
+    assert!(boxes.reader_requirements_box().is_some());
+    let reader_requirements = boxes.reader_requirements_box().as_ref().unwrap();
+    assert_eq!(reader_requirements.standard_flags().len(), 3);
+    assert_eq!(
+        *reader_requirements.standard_flags().get(0).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::UnrestrictedJPEG2000CoreCodingSystemCodestream,
+            mask: 128
+        }
+    );
+    assert_eq!(
+        *reader_requirements.standard_flags().get(1).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::RommRgbEnumeratedColourspace,
+            mask: 96
+        }
+    );
+    assert_eq!(
+        *reader_requirements.standard_flags().get(2).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::Deprecated43,
+            mask: 64
+        }
+    );
     let header_box = boxes.header_box().as_ref().unwrap();
     assert!(header_box.channel_definition_box.is_none());
     assert!(header_box.palette_box.is_none());
     assert!(header_box.component_mapping_box.is_none());
+    let primary_colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+    assert_eq!(primary_colour_specification_box.precedence(), 0);
+    assert_eq!(
+        primary_colour_specification_box.colourspace_approximation(),
+        1
+    );
+    assert_eq!(
+        primary_colour_specification_box.method(),
+        &ColourSpecificationMethods::RestrictedICCProfile {
+            profile_data: include_bytes!("file5_colr_ricc.dat").to_vec()
+        }
+    );
 
-    assert_eq!(boxes.xml_boxes().len(), 2);
-    let xml0 = boxes.xml_boxes().first().unwrap();
-    assert_eq!(xml0.identifier(), *b"xml ");
+    assert_eq!(boxes.xml_boxes().len(), 0);
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -241,30 +282,71 @@ fn test_sample_file6() {
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
 
-#[ignore = "uses unsupported Part 2 extensions"]
 #[test]
 fn test_sample_file7() {
-    let boxes = test_sample_jp2_file(
+    let boxes = test_sample_jpx_file(
         "file7.jp2",
         ExpectedConfiguration {
-            compatibility_list: vec!["\0\0\0\u{1}".into(), "jp2 ".into()],
-            width: 640,
-            height: 480,
+            compatibility_list: vec![
+                "\0\0\0\u{3}".into(),
+                "jp2 ".into(),
+                "jpx ".into(),
+                "jpxb".into(),
+            ],
+            width: 480,
+            height: 640,
             num_components: 3,
             bit_depth: 16,
+            // fallback method for JPX
             colour_specification_method: ColourSpecificationMethods::EnumeratedColourSpace {
-                code: EnumeratedColourSpaces::sRGB,
+                code: EnumeratedColourSpaces::esRGB,
             },
             has_unexpected_approx_set: true,
         },
+    );
+    assert!(boxes.reader_requirements_box().is_some());
+    let reader_requirements = boxes.reader_requirements_box().as_ref().unwrap();
+    assert_eq!(reader_requirements.standard_flags().len(), 3);
+    assert_eq!(
+        *reader_requirements.standard_flags().get(0).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::UnrestrictedJPEG2000CoreCodingSystemCodestream,
+            mask: 128
+        }
+    );
+    assert_eq!(
+        *reader_requirements.standard_flags().get(1).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::EsrgbEnumeratedColourspace,
+            mask: 96
+        }
+    );
+    assert_eq!(
+        *reader_requirements.standard_flags().get(2).unwrap(),
+        ExtensionFeatureRequirement {
+            flag: FeatureFlag::Deprecated43,
+            mask: 64
+        }
     );
 
     let header_box = boxes.header_box().as_ref().unwrap();
     assert!(header_box.channel_definition_box.is_none());
     assert!(header_box.palette_box.is_none());
     assert!(header_box.component_mapping_box.is_none());
+    let primary_colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+    assert_eq!(primary_colour_specification_box.precedence(), 0);
+    assert_eq!(
+        primary_colour_specification_box.colourspace_approximation(),
+        1
+    );
+    assert_eq!(
+        primary_colour_specification_box.method(),
+        &ColourSpecificationMethods::RestrictedICCProfile {
+            profile_data: include_bytes!("file7_colr_ricc.dat").to_vec()
+        }
+    );
 
-    assert_eq!(boxes.xml_boxes().len(), 2);
+    assert_eq!(boxes.xml_boxes().len(), 0);
 
     assert_eq!(boxes.uuid_boxes().len(), 0);
 }
@@ -570,21 +652,89 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
     let boxes = result.unwrap();
     assert!(boxes.length() > 0);
 
+    check_signature_box(&boxes);
+    assert!(boxes.reader_requirements_box().is_none());
+    check_file_type_box("jp2 ".into(), &expected.compatibility_list, &boxes);
+
+    assert!(boxes.reader_requirements_box().is_none());
+
+    check_jp2_header_box(expected, &boxes);
+
+    check_contiguous_codestream_box(&boxes);
+
+    boxes
+}
+
+fn check_jp2_header_box_jpx(expected: ExpectedConfiguration, boxes: &JP2File) {
+    assert!(boxes.header_box().is_some());
+    let header_box = boxes.header_box().as_ref().unwrap();
+    check_image_header_box(&expected, header_box);
+
+    assert_eq!(header_box.colour_specification_boxes.len(), 2);
+    let fallback_colour_specification_box = header_box.colour_specification_boxes.last().unwrap();
+    let colourspace_approximation = if expected.has_unexpected_approx_set {
+        1u8
+    } else {
+        0u8
+    };
+    check_part1_colour_specification_box(
+        1,
+        colourspace_approximation,
+        &expected.colour_specification_method,
+        fallback_colour_specification_box,
+    );
+
+    assert!(header_box.resolution_box.is_none());
+}
+
+fn check_signature_box(boxes: &JP2File) {
     assert!(boxes.signature_box().is_some());
     let signature = boxes.signature_box().as_ref().unwrap();
     assert_eq!(signature.identifier(), *b"jP  ");
     assert_eq!(signature.signature(), *b"\x0d\x0a\x87\x0a");
+}
 
+fn check_file_type_box(
+    expected_major_brand: String,
+    expected_compatibility_list: &Vec<String>,
+    boxes: &JP2File,
+) {
     assert!(boxes.file_type_box().is_some());
     let file_type = boxes.file_type_box().as_ref().unwrap();
     assert_eq!(file_type.identifier(), *b"ftyp");
-    assert_eq!(file_type.brand(), "jp2 ");
+    assert_eq!(file_type.brand(), expected_major_brand);
     assert_eq!(file_type.min_version(), 0);
-    assert_eq!(file_type.compatibility_list(), expected.compatibility_list);
+    assert_eq!(file_type.compatibility_list(), *expected_compatibility_list);
+}
 
+fn check_jp2_header_box(expected: ExpectedConfiguration, boxes: &JP2File) {
     assert!(boxes.header_box().is_some());
     let header_box = boxes.header_box().as_ref().unwrap();
     assert_eq!(header_box.identifier(), *b"jp2h");
+
+    check_image_header_box(&expected, header_box);
+
+    assert!(header_box.bits_per_component_box.is_none());
+    assert_eq!(header_box.colour_specification_boxes.len(), 1);
+    let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+
+    let colourspace_approximation = if expected.has_unexpected_approx_set {
+        1u8
+    } else {
+        0u8
+    };
+
+    check_part1_colour_specification_box(
+        0,
+        colourspace_approximation,
+        &expected.colour_specification_method,
+        colour_specification_box,
+    );
+
+    assert!(header_box.resolution_box.is_none());
+}
+
+fn check_image_header_box(expected: &ExpectedConfiguration, header_box: &jp2::HeaderSuperBox) {
     let image_header_box = &header_box.image_header_box;
     assert_eq!(image_header_box.identifier(), *b"ihdr");
     assert_eq!(image_header_box.height(), expected.height);
@@ -595,30 +745,54 @@ fn test_sample_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2F
     assert_eq!(image_header_box.intellectual_property(), 0);
     assert_eq!(image_header_box.components_bits(), expected.bit_depth);
     assert_eq!(image_header_box.values_are_signed(), false);
+}
 
-    assert!(header_box.bits_per_component_box.is_none());
-
-    assert_eq!(header_box.colour_specification_boxes.len(), 1);
-    let colour_specification_box = header_box.colour_specification_boxes.first().unwrap();
+fn check_part1_colour_specification_box(
+    expected_precedence: i8,
+    expected_approximation: u8,
+    expected_colour_specification_method: &ColourSpecificationMethods,
+    colour_specification_box: &jp2::colour_specification::ColourSpecificationBox,
+) {
     assert_eq!(colour_specification_box.identifier(), *b"colr");
-    assert_eq!(colour_specification_box.precedence(), 0);
-    if expected.has_unexpected_approx_set {
-        assert_eq!(colour_specification_box.colourspace_approximation(), 1u8);
-    } else {
-        assert_eq!(colour_specification_box.colourspace_approximation(), 0u8);
-    }
+    assert_eq!(colour_specification_box.precedence(), expected_precedence);
     assert_eq!(
-        *colour_specification_box.method(),
-        expected.colour_specification_method
+        colour_specification_box.colourspace_approximation(),
+        expected_approximation
     );
+    assert_eq!(
+        colour_specification_box.method(),
+        expected_colour_specification_method
+    );
+}
 
-    assert!(header_box.resolution_box.is_none());
-
+fn check_contiguous_codestream_box(boxes: &JP2File) {
     assert_eq!(boxes.contiguous_codestreams_boxes().len(), 1);
     let codestream_box = boxes.contiguous_codestreams_boxes().first().unwrap();
     assert_eq!(codestream_box.identifier(), *b"jp2c");
     assert!(codestream_box.length() > 0);
     assert!(codestream_box.offset() > 0);
+}
+
+fn test_sample_jpx_file(filename: &str, expected: ExpectedConfiguration) -> JP2File {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../samples")
+        .join(filename);
+    let file = File::open(path).expect("file should exist");
+    let mut reader = BufReader::new(file);
+    let result = decode_jp2(&mut reader);
+    assert!(result.is_ok());
+    let boxes = result.unwrap();
+    assert!(boxes.length() > 0);
+
+    check_signature_box(&boxes);
+    assert!(boxes.reader_requirements_box().is_some());
+    check_file_type_box("jpx ".into(), &expected.compatibility_list, &boxes);
+
+    assert!(boxes.reader_requirements_box().is_some());
+
+    check_jp2_header_box_jpx(expected, &boxes);
+
+    check_contiguous_codestream_box(&boxes);
 
     boxes
 }
@@ -681,6 +855,8 @@ fn test_jp2_file(filename: &str, expected: ExpectedConfiguration) -> JP2File {
     let signature = boxes.signature_box().as_ref().unwrap();
     assert_eq!(signature.signature(), *b"\x0d\x0a\x87\x0a");
 
+    assert!(boxes.reader_requirements_box().is_none());
+
     assert!(boxes.file_type_box().is_some());
     let file_type = boxes.file_type_box().as_ref().unwrap();
     assert_eq!(file_type.brand(), "jp2 ");
@@ -736,6 +912,8 @@ fn test_j2pi() {
     let result = decode_jp2(&mut reader);
     assert!(result.is_ok());
     let boxes = result.unwrap();
+
+    assert!(boxes.reader_requirements_box().is_none());
 
     assert!(boxes.header_box().is_some());
     let header_box = boxes.header_box().as_ref().unwrap();
@@ -850,6 +1028,7 @@ fn test_hirise_modified() {
     assert!(boxes.length() > 0);
 
     assert!(boxes.signature_box().is_some());
+    assert!(boxes.reader_requirements_box().is_none());
     assert!(boxes.file_type_box().is_some());
     assert!(boxes.header_box().is_some());
     let header_box = boxes.header_box().as_ref().unwrap();

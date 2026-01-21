@@ -33,7 +33,7 @@ fn test_data_load() {
 
 /// Test p0 compliance tests. Only verify pass/fail to parse.
 ///
-/// Treat as a ratchet and try to improve results.
+/// TODO: check rendered results against reference samples
 #[test]
 fn test_parse_p0_j2k_files() {
     //init_logger();
@@ -45,7 +45,7 @@ fn test_parse_p0_j2k_files() {
         (true, "./input/conformance/p0_04.j2k"),
         (true, "./input/conformance/p0_05.j2k"),
         (true, "./input/conformance/p0_06.j2k"),
-        (false, "./input/conformance/p0_07.j2k"),
+        (true, "./input/conformance/p0_07.j2k"),
         (true, "./input/conformance/p0_08.j2k"),
         (true, "./input/conformance/p0_09.j2k"),
         (true, "./input/conformance/p0_10.j2k"),

@@ -1089,12 +1089,12 @@ pub struct TilePacketLength {
     // header length.
     index: [u8; 1],
 
-    // Iplm^i: Length of the ith packet.
+    // Iplt^i: Length of the ith packet.
     //
     // If packet headers are stored with the packet, this length includes the
     // packet header. If packet headers are stored in the PPM or PPT, this
     // length does not include the packet header lengths.
-    packet_length: Vec<u8>,
+    packet_length: Vec<u64>,
 }
 
 // A.7.4
@@ -2499,20 +2499,50 @@ impl ContiguousCodestream {
         &mut self,
         reader: &mut R,
     ) -> Result<TilePacketLength, Box<dyn error::Error>> {
-        info!("PLT start at byte offset {}", reader.stream_position()? - 2);
+        let plt_start_offset = reader.stream_position()? - 2;
+        info!("PLT start at byte offset {}", plt_start_offset);
         let mut segment = TilePacketLength {
             offset: reader.stream_position()?,
             length: self.decode_length(reader)?,
             ..Default::default()
         };
-
+        let end_offset = segment.offset + segment.length as u64;
         reader.read_exact(&mut segment.index)?;
 
-        self.decode_packet_length(reader, &mut segment.packet_length)?;
+        while reader.stream_position()? < end_offset {
+            let iplt = Self::decode_tilepart_packet_length(reader).map_err(|_| {
+                CodestreamError::MarkerMalformed {
+                    marker: MARKER_SYMBOL_PLT.into(),
+                    offset: plt_start_offset,
+                }
+            })?;
+            segment.packet_length.push(iplt);
+        }
 
         info!("PLT end at byte offset {}", reader.stream_position()?);
 
         Ok(segment)
+    }
+
+    fn decode_tilepart_packet_length<R: io::Read + io::Seek>(reader: &mut R) -> Result<u64, ()> {
+        let mut next_byte = [0u8; 1];
+        let mut result = 0u64;
+        loop {
+            reader.read_exact(&mut next_byte).map_err(|_| ())?;
+            result = (result << 7) | ((next_byte[0] & 0b0111_1111) as u64);
+            match next_byte[0] & 0b1000_0000 {
+                // 0xxx xxxx - Last 7 bits of packet length, terminate number
+                0b0000_0000 => {
+                    return Ok(result);
+                }
+                // 1xxx xxxx - Continue reading
+                _ => {
+                    if result > u32::MAX as u64 {
+                        return Err(());
+                    }
+                }
+            }
+        }
     }
 
     fn decode_crg<R: io::Read + io::Seek>(
@@ -2805,7 +2835,7 @@ struct TilePartHeader {
 
     // PLT (Optional)
     // TODO double check there is only one per tile-part
-    packet_lengths: Option<PacketLengthSegment>,
+    packet_lengths: Option<TilePacketLength>,
 
     // COM (Optional, repeatable)
     comment_marker_segments: Vec<CommentMarkerSegment>,
@@ -3186,7 +3216,7 @@ impl ContiguousCodestream {
 
                 // PLT (Optional)
                 MARKER_SYMBOL_PLT => {
-                    let packet_length_segment = self.decode_plm(reader)?;
+                    let packet_length_segment = self.decode_plt(reader)?;
                     header.packet_lengths = Some(packet_length_segment);
                 }
 
@@ -3572,5 +3602,66 @@ mod tests {
             assert_eq!(quant_info.values(), vec![0x4001, 0x4802, 0x4803, 0x5004]);
             assert_eq!(quant_info.exponents(), vec![8, 9, 9, 10]);
         }
+    }
+
+    #[test]
+    fn test_plt_decode_0() {
+        let bytes = [
+            0xff, 0x58, 0x00, 0x63, 0x00, 0x81, 0x10, 0x81, 0x29, 0x81, 0x1f, 0x81, 0x44, 0x81,
+            0x17, 0x81, 0x02, 0x2e, 0x7a, 0x1e, 0x2c, 0x2b, 0x2a, 0x65, 0x57, 0x40, 0x82, 0x53,
+            0x34, 0x18, 0x2c, 0x2b, 0x2c, 0x4b, 0x69, 0x58, 0x2c, 0x57, 0x33, 0x09, 0x0b, 0x09,
+            0x70, 0x2f, 0x66, 0x81, 0x1a, 0x81, 0x18, 0x5d, 0x2a, 0x2a, 0x2b, 0x56, 0x79, 0x59,
+            0x82, 0x09, 0x82, 0x3c, 0x81, 0x6e, 0x4d, 0x4e, 0x4e, 0x56, 0x76, 0x70, 0x83, 0x1c,
+            0x82, 0x7a, 0x82, 0x2f, 0x09, 0x09, 0x09, 0x81, 0x32, 0x81, 0x31, 0x81, 0x2f, 0x83,
+            0x7b, 0x82, 0x77, 0x84, 0x03, 0x0a, 0x0a, 0x0a, 0x32, 0x31, 0x30, 0x84, 0x22, 0x84,
+            0x5b, 0x83, 0x40,
+        ];
+
+        let mut reader = Cursor::new(&bytes);
+        reader.seek_relative(2).unwrap(); // skip marker
+        let mut codestream = ContiguousCodestream::default();
+        let res = codestream.decode_plt(&mut reader);
+        assert!(res.is_ok());
+        let plt = res.unwrap();
+        assert_eq!(plt.length, 99);
+        assert_eq!(plt.index[0], 0);
+        // Iplt as reported by jpylyzer
+        assert_eq!(
+            plt.packet_length,
+            vec![
+                0x0090, 0x00A9, 0x009F, 0x00C4, 0x0097, 0x0082, 0x2E, 0x7A, 0x1E, 0x2C, 0x2B, 0x2A,
+                0x65, 0x57, 0x40, 0x0153, 0x34, 0x18, 0x2C, 0x2B, 0x2C, 0x4B, 0x69, 0x58, 0x2C,
+                0x57, 0x33, 0x09, 0x0B, 0x09, 0x70, 0x2F, 0x66, 0x009A, 0x0098, 0x5D, 0x2A, 0x2A,
+                0x2B, 0x56, 0x79, 0x59, 0x0109, 0x013C, 0x00EE, 0x4D, 0x4E, 0x4E, 0x56, 0x76, 0x70,
+                0x019C, 0x017A, 0x012F, 0x09, 0x09, 0x09, 0x00B2, 0x00B1, 0x00AF, 0x01FB, 0x0177,
+                0x0203, 0x0A, 0x0A, 0x0A, 0x32, 0x31, 0x30, 0x0222, 0x025B, 0x01C0
+            ]
+        );
+    }
+
+    #[test]
+    fn test_plt_decode_last() {
+        let bytes = [
+            0xff, 0x58, 0x00, 0x26, 0x00, 0x09, 0x7a, 0x13, 0x1e, 0x1b, 0x09, 0x29, 0x3e, 0x12,
+            0x1d, 0x82, 0x05, 0x37, 0x52, 0x82, 0x2b, 0x5d, 0x87, 0x2d, 0x87, 0x37, 0x85, 0x2f,
+            0x8d, 0x41, 0x8b, 0x23, 0x87, 0x70, 0x90, 0x78, 0x91, 0x0c, 0x91, 0x2f,
+        ];
+        let mut reader = Cursor::new(&bytes);
+        reader.seek_relative(2).unwrap(); // skip marker
+        let mut codestream = ContiguousCodestream::default();
+        let res = codestream.decode_plt(&mut reader);
+        assert!(res.is_ok());
+        let plt = res.unwrap();
+        assert_eq!(plt.length, 38);
+        assert_eq!(plt.index[0], 0);
+        // Iplt as reported by jpylyzer
+        assert_eq!(
+            plt.packet_length,
+            vec![
+                0x09, 0x7A, 0x13, 0x1E, 0x1B, 0x09, 0x29, 0x3E, 0x12, 0x1D, 0x0105, 0x37, 0x52,
+                0x012B, 0x5D, 0x03AD, 0x03B7, 0x02AF, 0x06C1, 0x05A3, 0x03F0, 0x0878, 0x088C,
+                0x08AF
+            ]
+        );
     }
 }

@@ -539,15 +539,6 @@ impl CodeBlockDecoder {
     }
 }
 
-// Decoder State
-#[derive(Debug, Default)]
-enum State {
-    SignificancePropagation,
-    #[default]
-    CleanUp,
-    MagnitudeRefinement,
-}
-
 #[cfg(test)]
 mod tests {
     use crate::coder::{standard_decoder, Decoder};

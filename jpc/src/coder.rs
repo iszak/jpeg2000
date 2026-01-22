@@ -510,24 +510,19 @@ impl MqDecoder {
             return;
         }
 
-        let b: u32 = self.buffer[self.bp].into();
+        let prev_b = self.buffer[self.bp - 1];
+        let b: u32 = self.buffer[self.bp] as u32;
 
-        if b == 0xFF {
-            if self.bp + 1 < self.buffer.len() {
-                let b1 = self.buffer[self.bp + 1];
-                if b1 > 0x8F {
-                    // Marker code detected - feed 1s
-                    self.c += 0xFF00;
-                    self.ct = 8;
-                } else {
-                    // Stuffed bit after 0xFF - increment BP and read 0xFF
-                    self.bp += 1;
-                    self.c += b << 9; //0xFF00;
-                    self.ct = 7;
-                }
-            } else {
+        if prev_b == 0xFF {
+            if b > 0x8F {
+                // Marker code detected - feed 1s
                 self.c += 0xFF00;
                 self.ct = 8;
+            } else {
+                // Stuffed bit after 0xFF
+                self.bp += 1;
+                self.c += b << 9;
+                self.ct = 7;
             }
         } else {
             // Normal byte - insert into bits 15-8 of C_low
@@ -945,5 +940,58 @@ mod tests {
             decoded.push(decoder.decode(*ctx));
         }
         assert_eq!(exp_bits, decoded);
+    }
+
+    #[test]
+    fn test_decode_ff() {
+        // There was an issue with 0xff decoding
+        let bs = b"\x12\x34\x56\xff\x4e\xbf";
+        let exp_bits = vec![
+            0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0,
+            0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1,
+            1,
+        ];
+
+        let mut decoder = MqDecoder::new(19);
+        decoder.reset_contexts();
+        decoder.init(bs);
+
+        let mut decoded = Vec::new();
+        for (i, eb) in exp_bits.iter().enumerate() {
+            let db = decoder.decode(i % 10);
+            decoded.push(db);
+            assert_eq!(db, *eb, "fail at i {i}");
+        }
+        println!("Decoded: {:?}", decoded);
+
+        assert_eq!(exp_bits, decoded);
+        let mut encoder = MqEncoder::new(19);
+        encoder.reset_contexts();
+        encoder.init();
+
+        for (i, bit) in exp_bits.iter().enumerate() {
+            encoder.encode(i % 10, *bit);
+        }
+        let out = encoder.flush();
+        println!("out: {:02x?}", out);
+        assert_eq!(bs.as_slice(), out, "encoding fail");
+    }
+
+    #[test]
+    fn test_decode_mq_16x5() {
+        let exp_bits = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0];
+        let bd = b"\x1c\xff\x3d\x50\xaf";
+        let mut decoder = MqDecoder::new(19);
+        decoder.reset_contexts();
+        decoder.init(bd);
+        let context_indexes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 5, 12, 1, 5, 0, 0];
+
+        let mut decoded = Vec::new();
+        for (ctx, exp_bit) in context_indexes.iter().zip(exp_bits.iter()) {
+            let db = decoder.decode(*ctx);
+            assert_eq!(*exp_bit, db, "Bits didnt match exp {} != {}", exp_bit, &db);
+            decoded.push(db);
+        }
+        assert_eq!(exp_bits, decoded, "decoded is incorrect?");
     }
 }

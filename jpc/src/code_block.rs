@@ -14,7 +14,7 @@ use std::fmt::Display;
 use log::{debug, info};
 
 use crate::coder::{Decoder, RUN_LEN, UNIFORM};
-use crate::shared::SubBandType;
+use crate::shared::{Array2D, SubBandType};
 
 #[derive(Debug, Clone)]
 enum Coeff {
@@ -38,8 +38,16 @@ impl Coeff {
     }
 }
 
+impl Default for Coeff {
+    fn default() -> Self {
+        Coeff::Insignificant(u8::MAX)
+    }
+}
+
 #[derive(Debug)]
-pub enum CodeBlockDecodeError {}
+pub enum CodeBlockDecodeError {
+    TooManyDecodingPasses,
+}
 
 impl Error for CodeBlockDecodeError {}
 
@@ -59,7 +67,8 @@ pub struct CodeBlockDecoder {
     height: i32,
     subband: SubBandType,
     bit_plane_shift: u8,
-    coefficients: Vec<Coeff>,
+    coefficients: Array2D<Coeff>,
+    decode_count: u32,
 }
 
 /// Wrapper around an x, y coord
@@ -76,7 +85,8 @@ impl CodeBlockDecoder {
             height,
             subband,
             bit_plane_shift: mb - 1,
-            coefficients: vec![Coeff::Insignificant(u8::MAX); (width * height) as usize],
+            coefficients: Array2D::new(width as usize, height as usize),
+            decode_count: 0,
         }
     }
 
@@ -87,12 +97,19 @@ impl CodeBlockDecoder {
         coder: &mut dyn Decoder,
     ) -> Result<(), CodeBlockDecodeError> {
         info!(
-            "Decoding {} passes for code block for subband {:?}",
-            passes, self.subband
+            "Decoding {} passes for code block in subband {:?}, decode_count {}, bit_plane {}",
+            passes, self.subband, self.decode_count, self.bit_plane_shift
         );
+        let too_many_passes = (passes - 1) / 3 > self.bit_plane_shift;
+        if too_many_passes {
+            return Err(CodeBlockDecodeError::TooManyDecodingPasses);
+        }
+        assert!((passes - 1) / 3 <= self.bit_plane_shift, "Too many passes");
 
         // Start in CleanUp -> SignificancePropagation -> MagnitudeRefinement -> repeat ...
-        self.pass_cleanup(coder);
+        if self.decode_count == 0 {
+            self.pass_cleanup(coder);
+        }
         for _ in (1..passes).step_by(3) {
             debug!("Beginning a pass set");
             self.bit_plane_shift -= 1;
@@ -101,26 +118,28 @@ impl CodeBlockDecoder {
             self.pass_cleanup(coder);
             debug!("coefficients: {:?}", self.coefficients);
         }
+        self.decode_count += 1;
         Ok(())
     }
     /// Return coefficients
     /// TODO return type is whak
     /// Note, return a copy, maybe need to decode more for this codeblock later and don't want to
     /// lose state
-    pub fn coefficients(&self) -> Vec<i32> {
-        self.coefficients
-            .iter()
-            .map(|c| match c {
-                Coeff::Significant { value, is_negative } => {
-                    if *is_negative {
-                        -1 * value
-                    } else {
-                        *value
-                    }
+    pub fn coefficients(&self) -> Array2D<i32> {
+        self.coefficients.map_elements(|c| match c {
+            Coeff::Significant { value, is_negative } => {
+                if *is_negative {
+                    -1 * value
+                } else {
+                    *value
                 }
-                Coeff::Insignificant(_) => 0,
-            } as i32)
-            .collect()
+            }
+            Coeff::Insignificant(_) => 0,
+        } as i32)
+    }
+
+    pub fn sub_band(&self) -> SubBandType {
+        self.subband
     }
 
     /// Handle a cleanup pass
@@ -133,14 +152,22 @@ impl CodeBlockDecoder {
             for x in 0..self.width {
                 let mut offset_y: i32 = 0;
 
-                // Count insignificants in this column strip
-                let mut count_insig = 0;
-                for y in by..(by + 4).min(self.height) {
-                    count_insig += (!self.is_significant(CoeffIndex { y, x })) as i32;
-                }
-
-                // Decision D8: Are four contiguous undecoded coefficients in a column each with a 0 context?
-                let d8 = 4 == count_insig;
+                // Decision D8: Are four contiguous undecoded (insignificant) coefficients in a column each with a 0 context?
+                let d8: bool = {
+                    // This could be much faster
+                    let mut count_insig_0_ctx = 0;
+                    for y in by..(by + 4).min(self.height) {
+                        let idx = CoeffIndex { x, y };
+                        if self.is_significant(idx) {
+                            break;
+                        }
+                        if 0 != self.significance_context(idx) {
+                            break;
+                        }
+                        count_insig_0_ctx += 1;
+                    }
+                    4 == count_insig_0_ctx
+                };
                 if d8 {
                     // All Insignificant, determine first significant
                     let c4 = coder.decode_bit(RUN_LEN);
@@ -184,7 +211,7 @@ impl CodeBlockDecoder {
                 }
             }
         }
-        info!("completed cleanup pass");
+        debug!("completed cleanup pass");
     }
 
     /// Handle a significance propagation pass
@@ -211,7 +238,7 @@ impl CodeBlockDecoder {
                 }
             }
         }
-        info!("completed significance pass");
+        debug!("completed significance pass");
     }
 
     /// Handle a magnitude refinement pass
@@ -235,7 +262,7 @@ impl CodeBlockDecoder {
                 }
             }
         }
-        info!("completed refinement pass");
+        debug!("completed refinement pass");
     }
 
     fn coeff_at(&self, idx: CoeffIndex) -> &Coeff {
@@ -245,7 +272,7 @@ impl CodeBlockDecoder {
             debug!("Out of bounds coeff_at {}, {}", x, y);
             &Coeff::Insignificant(u8::MAX)
         } else {
-            &self.coefficients[(self.width * idx.y + idx.x) as usize]
+            &self.coefficients[(idx.x as usize, idx.y as usize)]
         }
     }
 
@@ -253,7 +280,7 @@ impl CodeBlockDecoder {
         let CoeffIndex { x, y } = idx;
         let out_bounds = x < 0 || x >= self.width || y < 0 || y >= self.height;
         assert!(!out_bounds, "Should not be trying to mutate out of bounds");
-        &mut self.coefficients[(self.width * idx.y + idx.x) as usize]
+        &mut self.coefficients[(idx.x as usize, idx.y as usize)]
     }
 
     fn significance_context(&self, idx: CoeffIndex) -> usize {
@@ -436,7 +463,7 @@ impl CodeBlockDecoder {
         let h0 = self.coeff_at(CoeffIndex { y, x: x - 1 });
         let h1 = self.coeff_at(CoeffIndex { y, x: x + 1 });
 
-        debug!("v0 {v0:?} v1 {v1:?} h0 {v1:?} h1 {h1:?}");
+        debug!("v0 {v0:?} v1 {v1:?} h0 {h0:?} h1 {h1:?}");
 
         /// Add up the contribution to a -1,0,1
         fn contribution(a: &Coeff, b: &Coeff) -> i8 {
@@ -543,7 +570,13 @@ mod tests {
         fn decode_bit(&mut self, cx: usize) -> u8 {
             let (exp_cx, out) = self.exp[self.index];
             self.index += 1;
-            assert_eq!(exp_cx, cx, "incorrect cx during decode");
+            assert_eq!(
+                exp_cx,
+                cx,
+                "incorrect cx during decode. expected: {} at index {}",
+                exp_cx,
+                self.index - 1
+            );
             out
         }
     }
@@ -614,7 +647,7 @@ mod tests {
         );
 
         let coeffs = codeblock.coefficients();
-        let exp_coeffs = vec![-26, -22, -30, -32, -19];
+        let exp_coeffs = Array2D::from_data(vec![-26, -22, -30, -32, -19], 1, 5);
         assert_eq!(coeffs, exp_coeffs, "Coefficients didn't match");
     }
 
@@ -637,7 +670,7 @@ mod tests {
         );
 
         let coeffs = codeblock.coefficients();
-        let exp_coeffs = vec![-26, -22, -30, -32, -19];
+        let exp_coeffs = Array2D::from_data(vec![-26, -22, -30, -32, -19], 1, 5);
         assert_eq!(coeffs, exp_coeffs, "Coefficients didn't match");
     }
 
@@ -686,7 +719,7 @@ mod tests {
         );
 
         let coeffs = codeblock.coefficients();
-        let exp_coeffs = vec![1, 5, 1, 0];
+        let exp_coeffs = Array2D::from_data(vec![1, 5, 1, 0], 1, 4);
         assert_eq!(coeffs, exp_coeffs, "Coefficients didn't match");
     }
 
@@ -706,7 +739,26 @@ mod tests {
         );
 
         let coeffs = codeblock.coefficients();
-        let exp_coeffs = vec![1, 5, 1, 0];
+        let exp_coeffs = Array2D::from_data(vec![1, 5, 1, 0], 1, 4);
+        assert_eq!(coeffs, exp_coeffs, "Coefficients didn't match");
+    }
+
+    #[test]
+    fn test_decode_fail_3x7() {
+        init_logger();
+        let bd = [0x0f, 0x42, 0x78, 0x03, 0x7c, 0x3c, 0xbc, 0xe2, 0x7f];
+        let mut coder = standard_decoder(&bd);
+
+        let mut codeblock = CodeBlockDecoder::new(2, 4, SubBandType::LL, 9);
+        codeblock.num_zero_bit_planes(2);
+
+        assert!(
+            codeblock.decode(19, &mut coder).is_ok(),
+            "Expected decode to work"
+        );
+
+        let coeffs = codeblock.coefficients();
+        let exp_coeffs = Array2D::from_data(vec![-49, -29, 67, -28, 4, -49, 15, -67], 2, 4);
         assert_eq!(coeffs, exp_coeffs, "Coefficients didn't match");
     }
 }

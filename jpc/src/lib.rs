@@ -9,6 +9,8 @@ use std::io;
 use std::str;
 
 pub mod code_block;
+
+mod bit_reader;
 mod coder;
 mod shared;
 mod tag_tree;

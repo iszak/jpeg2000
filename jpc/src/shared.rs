@@ -10,3 +10,10 @@ pub enum SubBandType {
     /// High-pass horizontal, High-pass vertical
     HH,
 }
+
+/// Two dimensional index
+#[derive(Debug, Clone, Copy)]
+pub struct I2 {
+    pub x: u32,
+    pub y: u32,
+}

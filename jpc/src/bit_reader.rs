@@ -5,8 +5,8 @@ use std::{
 
 pub struct BitReader<'a, R: Read> {
     reader: &'a mut R,
-    last_byte: [u8; 1],
-    offset: u8,
+    last_byte: [u8; 1], // last byte read from reader
+    offset: u8,         // bit offset into last_byte, msb to lsb
     bits_read: u32,
 }
 

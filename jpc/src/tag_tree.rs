@@ -39,6 +39,8 @@ impl ZeroPlaneTagTree {
     }
 
     /// Read enough bits to decide on value
+    ///
+    /// The maximum number of zero planes is no more than 38, since 38 is the highest bit depth
     pub fn read<R: Read>(
         &mut self,
         dim_idx: I2,
@@ -147,25 +149,24 @@ impl TagTreeDecoder {
             x: c as u32,
             y: r as u32,
         };
-        self.query_recursize(idx, self.max_depth)
+        self.query_recursive(idx, self.max_depth)
     }
 
-    /// Internal call that needs to known depth
+    /// Internal call that needs to know depth
     fn query_exact(&self, depth: usize, column: usize, row: usize) -> TagTreeNode {
         let (width, level) = &self.levels[depth];
         level[row * width + column]
     }
 
-    /// Find the next
-    //fn query_recursize(&self, level: usize, column: usize, row: usize) -> TagTreeNode {
-    fn query_recursize(&self, dim_idx: I2, level: usize) -> TagTreeNode {
+    /// Query node, and parents, to find the correct value for this node
+    fn query_recursive(&self, dim_idx: I2, level: usize) -> TagTreeNode {
         let value = *self.node(dim_idx, level);
         if let TagTreeNode::SeeParent = value {
             let parent_dim = I2 {
                 x: dim_idx.x / 2,
                 y: dim_idx.y / 2,
             };
-            let parent = self.query_recursize(parent_dim, level - 1);
+            let parent = self.query_recursive(parent_dim, level - 1);
             match parent {
                 TagTreeNode::SeeParent => panic!("no base case"),
                 TagTreeNode::AtLeast(v) => TagTreeNode::AtLeast(v),
@@ -185,7 +186,7 @@ impl TagTreeDecoder {
     }
 
     fn query_i2(&self, dim_idx: I2) -> TagTreeNode {
-        self.query_recursize(dim_idx, self.max_depth)
+        self.query_recursive(dim_idx, self.max_depth)
     }
 
     /// Reads enough bits to decide if value will be greater than bound

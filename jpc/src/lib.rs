@@ -3121,10 +3121,11 @@ impl ContiguousCodestream {
         let start_of_tile_segment = self.decode_sot(reader)?;
         let mut header = TilePartHeader::new(start_of_tile_segment);
 
-        // todo determine if first header
-        if let _tiles_first_tile_part = true {
-            header.first_headers = Some(FirstTilePartHeaders::default())
-        }
+        // TODO: determine if first header
+        // See https://github.com/iszak/jpeg2000/issues/112
+        // if let _tiles_first_tile_part = true {
+        header.first_headers = Some(FirstTilePartHeaders::default());
+        // }
 
         let no_components = self
             .header

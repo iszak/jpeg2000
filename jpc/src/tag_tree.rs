@@ -45,8 +45,14 @@ impl ZeroPlaneTagTree {
         &mut self,
         dim_idx: I2,
         br: &mut BitReader<'_, R>,
-    ) -> Result<u32, io::Error> {
-        self.tag_tree.read(dim_idx, br)
+    ) -> Result<u8, io::Error> {
+        self.tag_tree.read(dim_idx, br).map(|v| {
+            if v <= u8::MAX as u32 {
+                v as u8
+            } else {
+                panic!("Invalid zero plane number")
+            }
+        })
     }
 }
 

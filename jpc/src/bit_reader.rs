@@ -43,13 +43,18 @@ impl<'a, R: Read> BitReader<'a, R> {
         Ok((self.last_byte[0] >> o) & 0x01 == 1)
     }
 
-    pub fn take(&mut self, arg: u8) -> Result<u8, io::Error> {
-        let mut out = 0;
+    pub fn take(&mut self, arg: u8) -> Result<u32, io::Error> {
+        let mut out = 0u32;
         for _ in 0..arg {
             out *= 2;
-            out += self.next_bit()? as u8;
+            out += self.next_bit()? as u32;
         }
         Ok(out)
+    }
+
+    pub fn take_u8(&mut self, arg: u8) -> Result<u8, io::Error> {
+        assert!(arg <= 8);
+        self.take(arg).map(|e| e as u8)
     }
 
     pub fn bits_read(&self) -> u32 {

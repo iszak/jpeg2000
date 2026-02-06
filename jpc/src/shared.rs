@@ -130,3 +130,10 @@ impl<T: Clone + Default> Array2D<T> {
         &self.data
     }
 }
+
+#[derive(Debug)]
+pub enum SubBandGroup<T> {
+    Full { ll: T, hl: T, lh: T, hh: T },
+    LL(T),
+    Partial { hl: T, lh: T, hh: T },
+}

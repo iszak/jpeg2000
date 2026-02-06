@@ -131,7 +131,7 @@ impl<T: Clone + Default> Array2D<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SubBandGroup<T> {
     Full { ll: T, hl: T, lh: T, hh: T },
     LL(T),
